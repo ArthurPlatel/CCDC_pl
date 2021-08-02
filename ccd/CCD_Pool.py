@@ -11,7 +11,7 @@ from collections import defaultdict
 import multiprocessing
 from functools import partial
 
-#Function to ingetst time seties data by row from a Fusion Image Stack
+#Function to ingetst time seties data by row from a Fusion image stack
 def rowData(r0,r1,imageCollection):
     n=0
     shape = FF.shape(imageCollection)
@@ -80,7 +80,8 @@ def toArray(result_map,band,data,num,shape,day):
                             emptyArray[row][y]=seq[band][data]
     return emptyArray
 
-
+#Creates an array based on pixel breakpoints to identify change between two dates
+#To work on, Filter function is not working properly
 def changeMap(result_map,shape,day1,day2):
     emptyArray=np.zeros(shape[1:3])
     for x in range(len(result_map)):
@@ -94,6 +95,7 @@ def changeMap(result_map,shape,day1,day2):
     datename= str(date.fromordinal(day1))+'_'+str(date.fromordinal(day2))
     save_raster(1,[emptyArray],shape,filename=(str(datename)+"ChangeMap"))
 
+#generates a an array making it easy to identify individual pixel coordinates
 def pixelCoordinates(shape):
     print(shape)
     bands,rows,columns=shape
@@ -101,6 +103,7 @@ def pixelCoordinates(shape):
     nparray=np.array(array1)
     return nparray
 
+#function to save raster to output location set in parameters.py
 def save_raster(band_count, arrays,shape,filename,format='GTiff', dtype = gdal.GDT_Float32):
         bands,rows,cols=shape
         image=gdal.Open(FF.sortImages(dfs["parent_dir"])[0],True)
@@ -115,6 +118,7 @@ def save_raster(band_count, arrays,shape,filename,format='GTiff', dtype = gdal.G
         print("Rasters Saved")
         Image_out_out = None
 
+#create training rasters to train CCDC classifier
 def trainingRaster(result_map,shape,day):
     trainingArrays=[]
     bands = ['blue','green','red','nir',"ndvi"]
@@ -128,7 +132,8 @@ def trainingRaster(result_map,shape,day):
                 trainingArrays.append(toArray(result_map,band,"coefficients",k,shape,day))
     print("saving training rasters")
     save_raster(len(trainingArrays),trainingArrays,shape,str(date.fromordinal(day))+"training")
-    
+
+#function to extract tif string into image date    
 def getDate(fusion_tif):
     gordinal = date(int(fusion_tif[-14:-10]), int(fusion_tif[-9:-7]), int(fusion_tif[-6:-4])).toordinal()
     return gordinal

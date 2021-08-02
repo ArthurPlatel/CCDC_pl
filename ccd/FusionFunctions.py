@@ -30,6 +30,8 @@ def shape(sortedImages):
     return shape
 
 
+
+
 def to_dict(c0,c1,x_pixels,images):
         time_series={(x,y):{'dates':[],'blue':[],'green':[], 'red':[], 'nir':[],'ndvi':[],'qas':[]} for y in range(c0,c1) for x in range(x_pixels)} 
         n=0
