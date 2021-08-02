@@ -1,4 +1,4 @@
-from ccd.data_input import Allto_list
+#from ccd.data_input import Allto_list
 from typing import final
 import FusionFunctions as FF
 from parameters import defaults as dfs
