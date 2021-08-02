@@ -92,10 +92,7 @@ The rest of the command prompts are truncated to ```$``` for readability, but as
 ```bash
 $ git clone https://github.com/usgs-eros/lcmap-pyccd.git
 ```
-or if you have ssh keys set up in github:
-```bash
-$ git clone git@github.com:usgs-eros/lcmap-pyccd.git
-```
+
 
 ##### Install dev dependencies
 Install jupyter notebook and line_profiler
