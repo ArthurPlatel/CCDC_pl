@@ -57,7 +57,7 @@ Default processing parameters can be over-ridden using a dictionary (see paramet
               'QA_SHADOW': 2,
               'QA_SNOW': 3,
               'QA_CLOUD': 4}
->>> results = ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas, params=params)
+>>> results = ccd.detect(dates, blues, greens, reds, nirs, ndvis, qas, params=params)
 ```
 
 ## Installing
