@@ -79,18 +79,18 @@ System requirements (Centos)
 
 It's highly recommended to do all your development & testing in a virtual environment.
 ```bash
-user@dev:/home/user/$ mkdir pyccd
-user@dev:/home/user/$ cd pyccd
-user@dev:/home/user/pyccd$ virtualenv -p python3 .venv
-user@dev:/home/user/pyccd$ . .venv/bin/activate
-(.venv) user@dev:/home/user/pyccd$
+user@dev:/home/user/$ mkdir fusion_ccd
+user@dev:/home/user/$ cd fusion_ccd
+user@dev:/home/user/fusion_ccd$ virtualenv -p python3 .venv
+user@dev:/home/user/fusion_ccd$ . .venv/bin/activate
+(.venv) user@dev:/home/user/fusion_ccd$
 ```
 
 The rest of the command prompts are truncated to ```$``` for readability, but assume an activated virtual environment and pwd as above, or that you know what you are doing.
 
 ##### Clone the repo
 ```bash
-$ git clone https://github.com/usgs-eros/lcmap-pyccd.git
+$ git clone https://github.com/ArthurPlatel/CCDC_working.git
 ```
 
 
