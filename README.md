@@ -1,10 +1,10 @@
-# PyCCD - Python Continuous Change Detection
+# Fusion_CCD - Python Continuous Change Detection fo Fusion Data
 pyccd exists to provide the simplest possible implementation of ccd.
 
-## Using PyCCD
+## Using Fusion_CCD
 ```python
 >>> import ccd
->>> results = ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
+>>> results = ccd.detect(dates, blues, greens, reds, nirs, ndvis, qas)
 >>>
 >>> type(results)
 <class 'dict'>
@@ -38,19 +38,10 @@ pyccd exists to provide the simplest possible implementation of ccd.
                   rmse: float,
                   coefficients: (float, float, ...),
                   intercept: float},
-      swir1:     {magnitude: float,
+      ndvi:     {magnitude: float,
                   rmse: float,
                   coefficients: (float, float, ...),
-                  intercept: float},
-      swir2:     {magnitude: float,
-                  rmse: float,
-                  coefficients: (float, float, ...),
-                  intercept: float},
-      thermal:   {magnitude: float,
-                  rmse: float,
-                  coefficients: (float, float, ...),
-                  intercept: float}}
-                 ]
+                  intercept: float}
 }
 
 ```
