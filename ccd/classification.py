@@ -54,10 +54,9 @@ def createClassifier():
 
         #Classification function
 
-
-def classify(df):
-    clf=createClassifier()
-    class_pred=clf.predict(df)[0]
+#clf=createClassifier()
+def classify(df,classifier):
+    class_pred=classifier.predict(df)[0]
     return class_pred
 
 #helper function to load CCD result into readable dataframe for classification

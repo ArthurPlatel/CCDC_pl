@@ -1,15 +1,7 @@
 import csv
 import pandas as pd
-
-csvFile='/Users/arthur.platel/Desktop/CCDC_Output/ccdResults.csv'
-with open(csvFile) as csv_file:
-    csv_reader = csv.reader(csv_file, delimiter=',')
-    r=0
-    for row in csv_reader:
-         if r==1:
-             print(eval(row)['start_day'])
-    #         print(eval(row[1])[0][0]["start_day"])
-         r+=1
+import classification as cls
+from datetime import date
 
 def toDF(seq):
     pixel=pd.DataFrame({
@@ -25,3 +17,20 @@ def toDF(seq):
             'Coef1 ndvi':[seq['ndvi']["coefficients"][0]],
         })
     return pixel
+
+csvFile='/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/CCD_resultsDict.csv'
+clsf=cls.createClassifier()
+classList=['barren','burned','redwood']
+with open(csvFile) as csv_file:
+    csv_reader = csv.reader(csv_file, delimiter=',')
+    for row in csv_reader:
+        df1=toDF(eval(row[0]))
+        df2=toDF(eval(row[1]))
+        class1=cls.classify(df1,clsf)
+        class2=cls.classify(df2,clsf)
+        # print(class1)
+        # print(class2)
+        # print(classList[int(class1)])
+        print("pixel {} was {} until {} when it was {}".format(eval(row[0])["pixel"],classList[int(class1)],date.fromordinal(eval(row[0])["break_day"]),classList[int(class2)]))
+        #print(len(row))#,#["pixel"])
+

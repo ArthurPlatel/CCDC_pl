@@ -7,8 +7,8 @@ defaults = {
     #'parent_dir': '/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2',
     #'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/Imperial_Subset',
     #'parent_dir': '/Users/arthur.platel/Desktop/Fusion_Images/SantaCruz_NoFire',
-    #'out_dir':"/Users/arthur.platel/Desktop/CCDC_Output/",
-    'out_dir':'/home/arthur.platel/ccd_out/sandypointV3',
+    #'out_dir':"/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/",
+    'out_dir':'/home/arthur.platel/ccd_out/sandypointV3/',
     'parent_dir':'/home/arthur.platel/FusionImages/sandypointV3/ccd-sandy-point-ca-v3/site-1/PF-SR',
 
     'MEOW_SIZE': 12,

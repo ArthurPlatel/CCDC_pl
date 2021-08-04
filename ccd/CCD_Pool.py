@@ -59,19 +59,9 @@ def CCD_row(r1,factor):
     rows=rowData(r0,r1,image_collection)
     rank = multiprocessing.current_process()
     print(rank)
-    #new=[[((CCD(rows[x][y])))for y in range(np.shape(rows)[1])]for x in range(np.shape(rows)[0])]
-    new=[[((CCD(rows[x][y])))for y in range(5)]for x in range(np.shape(rows)[0])]
+    new=[[((CCD(rows[x][y])))for y in range(np.shape(rows)[1])]for x in range(np.shape(rows)[0])]
+    #new=[[((CCD(rows[x][y])))for y in range(5)]for x in range(np.shape(rows)[0])]
     print("processed in {}".format(time.time()-now))
-    
-    # # open the file in the write mode
-    # with open(dfs['out_dir']+"result.csv", 'w') as f:
-    # # create the csv writer
-    #     writer = csv.writer(f)
-    # # write a row to the csv file
-    #     for row in new:
-    #         writer.writerow(row)
-    #     # close the file
-    #     f.close()
     return new
 
 
@@ -115,21 +105,19 @@ def csvResults(result_map,shape):
     field_names = ['start_day', 'end_day', 'break_day','observation_count','change_probability','curve_qa','blue','green','red','nir','ndvi','pixel']
     with open(dfs['out_dir']+"CCD_resultsDict.csv", 'w') as f:
         #create the csv writer
-        #writer = csv.DictWriter(f, fieldnames = field_names)
-        #writer.writeheader()
+        writer = csv.writer(f)
         for x in range(len(result_map)):
             r=(x*len(result_map[x]))
             for l in range(len(result_map[x])):
                 row=r+l
                 for y in range(len(result_map[x][l])):
                     for seq in (result_map[x][l][y]):
-                     # # open the file in the write mode
+                     # open the file in the write mode
                      # write a row to the csv file
                         seq['pixel']=str((row,y))
-                        pd.concat(toDF(seq))
-        dataFrames.to_csv(dfs["out_dir"]+"ccdResults2.csv")
-                #writer.writerows(pd.DataFrame(result_map[x][l][y]))
-    # close the file
+                print("result_Map_row",result_map[x][l])
+                writer.writerows(result_map[x][l])
+    #close the file
     f.close()
 
 
@@ -197,14 +185,11 @@ def main():
     shape=FF.shape(sorted)
     day1=getDate(sorted[0])
     day2=getDate(sorted[len(sorted)-1])
-    #lines=[150,300,450,600]
-    # lines=[]
-    # for k in range(5,685,5):
-    #     lines.append(k)
-    lines=[1,2,3,4]
-    #lines=[10,20,30,40]#,50,60,70,80,90,100]
+    lines=[]
+    for k in range(5,685,5):
+         lines.append(k)
     fac=lines[1]-lines[0]
-    size=4
+    size=8
     pixels=pixelCoordinates(shape)
     save_raster(1,[pixels],shape,"_pixelCoordinates.tif")
     p = multiprocessing.Pool(size)
@@ -213,7 +198,6 @@ def main():
     trainingRaster(result_map,shape,day=day1+30)
     trainingRaster(result_map,shape,day=(day2-3))
     csvResults(result_map,shape)
-    
     time_final=time.time()-now
     print("total process finished in:", time_final)
 
