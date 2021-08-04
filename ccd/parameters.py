@@ -3,10 +3,13 @@
 ############################
 defaults = {
      #'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/SantaCruz_NoFire',
-     #'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/deforestation_Octave/PF-SR',
-    'parent_dir': '/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2',
+    #'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/deforestation_Octave/PF-SR',
+    #'parent_dir': '/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2',
+    #'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/Imperial_Subset',
     #'parent_dir': '/Users/arthur.platel/Desktop/Fusion_Images/SantaCruz_NoFire',
-    'out_dir':"/Users/arthur.platel/Desktop/CCDC_Output/CZU/PF-SR/",
+    #'out_dir':"/Users/arthur.platel/Desktop/CCDC_Output/",
+    'out_dir':'/ccd_out/sandypointV3',
+    'parent_dir':'home/arthur.platel/FusionImages/sandypointV3/ccd-sandy-point-ca-v3/site-1/PF-SR',
 
     'MEOW_SIZE': 12,
     'PEEK_SIZE': 8,
@@ -96,7 +99,7 @@ defaults = {
     # Values related to model fitting
     ############################
     'FITTER_FN': 'ccd.models.lasso.fitted_model',
-    'LASSO_MAX_ITER': 3000,
+    'LASSO_MAX_ITER': 1000,
     
 
     ##############################
