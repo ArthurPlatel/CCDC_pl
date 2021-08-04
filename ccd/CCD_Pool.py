@@ -43,7 +43,8 @@ def rowData(r0,r1,imageCollection):
 pix=0
 def CCD(pixel_data):
     global pix 
-    print("ccding pixel",pix)   
+    if pix!=0 and pix%975==0:
+        print("Finished ccding row:",pix%975)   
     pix+=1
     data=np.array(pixel_data)
     dates,blues,greens,reds,nirs,ndvis,qas=data
