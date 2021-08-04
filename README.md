@@ -1,10 +1,10 @@
-# PyCCD - Python Continuous Change Detection
+# Fusion_CCD - Python Continuous Change Detection fo Fusion Data
 pyccd exists to provide the simplest possible implementation of ccd.
 
-## Using PyCCD
+## Using Fusion_CCD
 ```python
 >>> import ccd
->>> results = ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas)
+>>> results = ccd.detect(dates, blues, greens, reds, nirs, ndvis, qas)
 >>>
 >>> type(results)
 <class 'dict'>
@@ -38,19 +38,10 @@ pyccd exists to provide the simplest possible implementation of ccd.
                   rmse: float,
                   coefficients: (float, float, ...),
                   intercept: float},
-      swir1:     {magnitude: float,
+      ndvi:     {magnitude: float,
                   rmse: float,
                   coefficients: (float, float, ...),
-                  intercept: float},
-      swir2:     {magnitude: float,
-                  rmse: float,
-                  coefficients: (float, float, ...),
-                  intercept: float},
-      thermal:   {magnitude: float,
-                  rmse: float,
-                  coefficients: (float, float, ...),
-                  intercept: float}}
-                 ]
+                  intercept: float}
 }
 
 ```
@@ -66,7 +57,7 @@ Default processing parameters can be over-ridden using a dictionary (see paramet
               'QA_SHADOW': 2,
               'QA_SNOW': 3,
               'QA_CLOUD': 4}
->>> results = ccd.detect(dates, blues, greens, reds, nirs, swir1s, swir2s, thermals, qas, params=params)
+>>> results = ccd.detect(dates, blues, greens, reds, nirs, ndvis, qas, params=params)
 ```
 
 ## Installing
@@ -88,23 +79,20 @@ System requirements (Centos)
 
 It's highly recommended to do all your development & testing in a virtual environment.
 ```bash
-user@dev:/home/user/$ mkdir pyccd
-user@dev:/home/user/$ cd pyccd
-user@dev:/home/user/pyccd$ virtualenv -p python3 .venv
-user@dev:/home/user/pyccd$ . .venv/bin/activate
-(.venv) user@dev:/home/user/pyccd$
+user@dev:/home/user/$ mkdir fusion_ccd
+user@dev:/home/user/$ cd fusion_ccd
+user@dev:/home/user/fusion_ccd$ virtualenv -p python3 .venv
+user@dev:/home/user/fusion_ccd$ . .venv/bin/activate
+(.venv) user@dev:/home/user/fusion_ccd$
 ```
 
 The rest of the command prompts are truncated to ```$``` for readability, but assume an activated virtual environment and pwd as above, or that you know what you are doing.
 
 ##### Clone the repo
 ```bash
-$ git clone https://github.com/usgs-eros/lcmap-pyccd.git
+$ git clone https://github.com/ArthurPlatel/CCDC_working.git
 ```
-or if you have ssh keys set up in github:
-```bash
-$ git clone git@github.com:usgs-eros/lcmap-pyccd.git
-```
+
 
 ##### Install dev dependencies
 Install jupyter notebook and line_profiler
