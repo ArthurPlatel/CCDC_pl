@@ -28,11 +28,6 @@ with open(csvFile) as csv_file:
         df2=toDF(eval(row[1]))
         class1=cls.classify(df1,clsf)
         class2=cls.classify(df2,clsf)
-        print(eval(row[0]))
-        print(eval(row[1]))
-        # print(class1)
-        # print(class2)
-        # print(classList[int(class1)])
         print("pixel {} was {} until {} when it was {}".format(eval(row[0])["pixel"],classList[int(class1)],date.fromordinal(eval(row[0])["break_day"]),classList[int(class2)]))
-        #print(len(row))#,#["pixel"])
+
 

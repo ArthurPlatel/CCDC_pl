@@ -59,8 +59,8 @@ def CCD_row(r1,factor):
     rows=rowData(r0,r1,image_collection)
     rank = multiprocessing.current_process()
     print(rank)
-    #new=[[((CCD(rows[x][y])))for y in range(np.shape(rows)[1])]for x in range(np.shape(rows)[0])]
-    new=[[((CCD(rows[x][y])))for y in range(5)]for x in range(np.shape(rows)[0])]
+    new=[[((CCD(rows[x][y])))for y in range(np.shape(rows)[1])]for x in range(np.shape(rows)[0])]
+    #new=[[((CCD(rows[x][y])))for y in range(5)]for x in range(np.shape(rows)[0])]
     print("processed in {}".format(time.time()-now))
     return new
 
@@ -189,7 +189,7 @@ def main():
     for k in range(5,685,5):
          lines.append(k)
     fac=lines[1]-lines[0]
-    size=4
+    size=8
     pixels=pixelCoordinates(shape)
     save_raster(1,[pixels],shape,"_pixelCoordinates.tif")
     p = multiprocessing.Pool(size)
