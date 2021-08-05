@@ -51,10 +51,10 @@ def CCD(pixel_data):
     return result["change_models"]
   
 #CCD analysis by row  
-def CCD_row(r1,factor):
+def CCD_row(r1,factor,parent_dir):
     now=time.time()
     r0=r1-factor
-    image_collection=FF.sortImages(dfs["parent_dir"],True)
+    image_collection=FF.sortImages(parent_dir,True)
     print("processing row:",r0)
     rows=rowData(r0,r1,image_collection)
     rank = multiprocessing.current_process()
@@ -99,11 +99,11 @@ def toDF(seq):
     return pixel
 
 import pandas as pd
-def csvResults(result_map,shape):
+def csvResults(result_map,shape,out_dir):
     emptyArray=np.zeros(shape[1:3])
     dataFrames=pd.DataFrame([])
     field_names = ['start_day', 'end_day', 'break_day','observation_count','change_probability','curve_qa','blue','green','red','nir','ndvi','pixel']
-    with open(dfs['out_dir']+"CCD_resultsDict.csv", 'w') as f:
+    with open(str(out_dir)+"CCD_resultsDict.csv", 'w') as f:
         #create the csv writer
         writer = csv.writer(f)
         for x in range(len(result_map)):
@@ -115,7 +115,6 @@ def csvResults(result_map,shape):
                      # open the file in the write mode
                      # write a row to the csv file
                         seq['pixel']=str((row,y))
-                print("result_Map_row",result_map[x][l])
                 writer.writerows(result_map[x][l])
     #close the file
     f.close()
@@ -123,7 +122,7 @@ def csvResults(result_map,shape):
 
 #Creates an array based on pixel breakpoints to identify change between two dates
 #To work on, Filter function is not working properly
-def changeMap(result_map,shape,day1,day2):
+def changeMap(result_map,shape,day1,day2,out_dir,geo,proj):
     emptyArray=np.zeros(shape[1:3])
     for x in range(len(result_map)):
         r=(x*len(result_map[x]))
@@ -134,7 +133,7 @@ def changeMap(result_map,shape,day1,day2):
                      if day1<=seq["break_day"]<day2:
                          emptyArray[row][y]=seq['break_day']
     datename= str(date.fromordinal(day1))+'_'+str(date.fromordinal(day2))
-    save_raster(1,[emptyArray],shape,filename=(str(datename)+"ChangeMap"))
+    save_raster(1,[emptyArray],shape,(str(datename)+"ChangeMap"),out_dir,geo,proj)
 
 
 #generates a an array making it easy to identify individual pixel coordinates
@@ -146,22 +145,21 @@ def pixelCoordinates(shape):
     return nparray
 
 #function to save raster to output location set in parameters.py
-def save_raster(band_count, arrays,shape,filename,format='GTiff', dtype = gdal.GDT_Float32):
+def save_raster(band_count, arrays,shape,filename,out_dir,geo,proj,format='GTiff', dtype = gdal.GDT_Float32):
         bands,rows,cols=shape
-        image=gdal.Open(FF.sortImages(dfs["parent_dir"])[0],True)
-        tot_path=dfs['out_dir']+str(filename)+".tif"
+        tot_path=str(out_dir)+str(filename)+".tif"
         # Initialize driver & create file
         driver = gdal.GetDriverByName(format)
         Image_out = driver.Create(tot_path,cols,rows,band_count,dtype)
-        Image_out.SetGeoTransform(image.GetGeoTransform())
-        Image_out.SetProjection(image.GetProjection())
+        Image_out.SetGeoTransform(geo)
+        Image_out.SetProjection(proj)
         for k in range(band_count):
             Image_out.GetRasterBand(k+1).WriteArray(arrays[k])
         print("Rasters Saved")
         Image_out_out = None
 
 #create training rasters to train CCDC classifier
-def trainingRaster(result_map,shape,day):
+def trainingRaster(result_map,shape,day,out_dir,geo,proj):
     trainingArrays=[]
     bands = ['blue','green','red','nir','ndvi']
     for band in bands:
@@ -172,39 +170,68 @@ def trainingRaster(result_map,shape,day):
         for k in range(3):
             trainingArrays.append(toArray(result_map,band,"coefficients",k,shape,day))
     print("saving training rasters")
-    save_raster(len(trainingArrays),trainingArrays,shape,str(date.fromordinal(day))+"training")
+    save_raster(len(trainingArrays),trainingArrays,shape,str(date.fromordinal(day))+"training",out_dir,geo,proj)
 
 #function to extract tif string into image date    
 def getDate(fusion_tif):
     gordinal = date(int(fusion_tif[-14:-10]), int(fusion_tif[-9:-7]), int(fusion_tif[-6:-4])).toordinal()
     return gordinal
 
-def main():
+def imageCCD(parent_dir, out_dir,size=4,odd=True):
     now=time.time()
-    sorted=FF.sortImages(dfs["parent_dir"],True)
+    sorted=FF.sortImages(parent_dir,odd)
+    image=gdal.Open(sorted[0],True)
+    geo=image.GetGeoTransform()
+    proj=image.GetProjection()
     shape=FF.shape(sorted)
     day1=getDate(sorted[0])
     day2=getDate(sorted[len(sorted)-1])
     lines=[]
-    for k in range(5,685,5):
+    for k in range(5,(shape[1]-(shape[1]%5))+5,5):
          lines.append(k)
+    #lines=[670,675,680,685]
     fac=lines[1]-lines[0]
-    size=6
     pixels=pixelCoordinates(shape)
-    save_raster(1,[pixels],shape,"_pixelCoordinates.tif")
+    save_raster(1,[pixels],shape,"_pixelCoordinates.tif",out_dir,geo,proj)
     p = multiprocessing.Pool(size)
-    result_map = p.map(partial(CCD_row,factor=fac), lines)
-    changeMap(result_map,shape,day1,day2)
-    trainingRaster(result_map,shape,day=day1+30)
-    trainingRaster(result_map,shape,day=(day2-3))
-    csvResults(result_map,shape)
+    result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir), lines)
+    changeMap(result_map,shape,day1,day2,out_dir,geo,proj)
+    trainingRaster(result_map,shape,(day1+30),out_dir,geo,proj)
+    trainingRaster(result_map,shape,(day2-3),out_dir,geo,proj)
+    csvResults(result_map,shape,out_dir)
     time_final=time.time()-now
     print("total process finished in:", time_final)
 
+#def main():
+    # parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2'
+    # out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/HighRows/"
+    # imageCCD(parent_dir,out_dir)
+
+    # now=time.time()
+    # sorted=FF.sortImages(dfs["parent_dir"],True)
+    # shape=FF.shape(sorted)
+    # day1=getDate(sorted[0])
+    # day2=getDate(sorted[len(sorted)-1])
+    # lines=[]
+    # for k in range(5,685,5):
+    #      lines.append(k)
+    # fac=lines[1]-lines[0]
+    # size=4
+    # pixels=pixelCoordinates(shape)
+    # save_raster(1,[pixels],shape,"_pixelCoordinates.tif")
+    # p = multiprocessing.Pool(size)
+    # result_map = p.map(partial(CCD_row,factor=fac), lines)
+    # changeMap(result_map,shape,day1,day2)
+    # trainingRaster(result_map,shape,day=day1+30)
+    # trainingRaster(result_map,shape,day=(day2-3))
+    # csvResults(result_map,shape)
+    # time_final=time.time()-now
+    # print("total process finished in:", time_final)
 
 
-if __name__ == '__main__':
-    main()
+
+# if __name__ == '__main__':
+#     main()
 
 
 
