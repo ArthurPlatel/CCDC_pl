@@ -10,7 +10,7 @@ defaults = {
     'out_dir':"/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/",
     #'out_dir':'/home/arthur.platel/ccd_out/sandypointV3/',
     #'parent_dir':'/home/arthur.platel/FusionImages/sandypointV3/ccd-sandy-point-ca-v3/site-1/PF-SR',
-
+    #parent_dir = '/home/arthur.platel/FusionImages/ccd-sandy-point-ca-2/site-1/PF-SR',
     'MEOW_SIZE': 12,
     'PEEK_SIZE': 8,
     'DAY_DELTA': 365,

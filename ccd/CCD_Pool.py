@@ -42,19 +42,22 @@ def rowData(r0,r1,imageCollection):
     return time_series 
 pix=0
 def CCD(pixel_data):
+    now=time.time()
     global pix 
-    print("Finished ccding",pix)   
-    pix+=1
+    
     data=np.array(pixel_data)
     dates,blues,greens,reds,nirs,ndvis,qas=data
     result=detect(dates, greens,blues, reds, nirs, ndvis, qas, dfs['params'])
+    final_time=time.time()-now
+    print("Finished ccding in",pix,final_time)
+    pix+=1   
     return result["change_models"]
   
 #CCD analysis by row  
-def CCD_row(r1,factor,parent_dir):
+def CCD_row(r1,factor,parent_dir,odd):
     now=time.time()
     r0=r1-factor
-    image_collection=FF.sortImages(parent_dir,True)
+    image_collection=FF.sortImages(parent_dir,odd)
     print("processing row:",r0)
     rows=rowData(r0,r1,image_collection)
     rank = multiprocessing.current_process()
@@ -194,7 +197,7 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True):
     pixels=pixelCoordinates(shape)
     save_raster(1,[pixels],shape,"_pixelCoordinates.tif",out_dir,geo,proj)
     p = multiprocessing.Pool(size)
-    result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir), lines)
+    result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,odd=odd), lines)
     changeMap(result_map,shape,day1,day2,out_dir,geo,proj)
     trainingRaster(result_map,shape,(day1+30),out_dir,geo,proj)
     trainingRaster(result_map,shape,(day2-3),out_dir,geo,proj)
@@ -202,31 +205,31 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True):
     time_final=time.time()-now
     print("total process finished in:", time_final)
 
-#def main():
-    # parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2'
-    # out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/HighRows/"
-    # imageCCD(parent_dir,out_dir)
+# def main():
+#     parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2'
+#     out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/HighRows/"
+#     imageCCD(parent_dir,out_dir)
 
-    # now=time.time()
-    # sorted=FF.sortImages(dfs["parent_dir"],True)
-    # shape=FF.shape(sorted)
-    # day1=getDate(sorted[0])
-    # day2=getDate(sorted[len(sorted)-1])
-    # lines=[]
-    # for k in range(5,685,5):
-    #      lines.append(k)
-    # fac=lines[1]-lines[0]
-    # size=4
-    # pixels=pixelCoordinates(shape)
-    # save_raster(1,[pixels],shape,"_pixelCoordinates.tif")
-    # p = multiprocessing.Pool(size)
-    # result_map = p.map(partial(CCD_row,factor=fac), lines)
-    # changeMap(result_map,shape,day1,day2)
-    # trainingRaster(result_map,shape,day=day1+30)
-    # trainingRaster(result_map,shape,day=(day2-3))
-    # csvResults(result_map,shape)
-    # time_final=time.time()-now
-    # print("total process finished in:", time_final)
+#     # now=time.time()
+#     # sorted=FF.sortImages(dfs["parent_dir"],True)
+#     # shape=FF.shape(sorted)
+#     # day1=getDate(sorted[0])
+#     # day2=getDate(sorted[len(sorted)-1])
+#     # lines=[]
+#     # for k in range(5,685,5):
+#     #      lines.append(k)
+#     # fac=lines[1]-lines[0]
+#     # size=4
+#     # pixels=pixelCoordinates(shape)
+#     # save_raster(1,[pixels],shape,"_pixelCoordinates.tif")
+#     # p = multiprocessing.Pool(size)
+#     # result_map = p.map(partial(CCD_row,factor=fac), lines)
+#     # changeMap(result_map,shape,day1,day2)
+#     # trainingRaster(result_map,shape,day=day1+30)
+#     # trainingRaster(result_map,shape,day=(day2-3))
+#     # csvResults(result_map,shape)
+#     # time_final=time.time()-now
+#     # print("total process finished in:", time_final)
 
 
 

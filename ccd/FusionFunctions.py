@@ -12,7 +12,7 @@ from ccd.parameters import defaults as dfs
 #parent_dir="/Users/arthur.platel/Desktop/Fusion_Images/Imperial_Subset"
 
 #function to load images locally and sort by date
-def sortImages(parent_dir,odd=False):
+def sortImages(parent_dir,odd=True):
     files = glob.glob(os.path.join(parent_dir, '*.tif'))
     if odd==True:
         odd=[]
