@@ -1,7 +1,7 @@
 #from ccd.data_input import Allto_list
 from typing import final
 import ccd.FusionFunctions as FF
-from parameters import defaults as dfs
+from ccd.parameters import defaults as dfs
 import numpy as np
 import time
 from osgeo import gdal
