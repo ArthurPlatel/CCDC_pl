@@ -54,7 +54,7 @@ def CCD(pixel_data):
     return result["change_models"]
   
 #CCD analysis by row  
-def CCD_row(r1,factor,parent_dir,odd):
+def CCD_row(r1,factor,parent_dir,odd,test):
     now=time.time()
     r0=r1-factor
     image_collection=FF.sortImages(parent_dir,odd)
@@ -62,8 +62,10 @@ def CCD_row(r1,factor,parent_dir,odd):
     rows=rowData(r0,r1,image_collection)
     rank = multiprocessing.current_process()
     print(rank)
-    new=[[((CCD(rows[x][y])))for y in range(np.shape(rows)[1])]for x in range(np.shape(rows)[0])]
-    #new=[[((CCD(rows[x][y])))for y in range(5)]for x in range(np.shape(rows)[0])]
+    if test==False:
+        new=[[((CCD(rows[x][y])))for y in range(np.shape(rows)[1])]for x in range(np.shape(rows)[0])]
+    if test==True:
+        new=[[((CCD(rows[x][y])))for y in range(5)]for x in range(np.shape(rows)[0])]
     print("processed in {}".format(time.time()-now))
     return new
 
@@ -180,7 +182,7 @@ def getDate(fusion_tif):
     gordinal = date(int(fusion_tif[-14:-10]), int(fusion_tif[-9:-7]), int(fusion_tif[-6:-4])).toordinal()
     return gordinal
 
-def imageCCD(parent_dir, out_dir,size=4,odd=True):
+def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, print=True):
     now=time.time()
     sorted=FF.sortImages(parent_dir,odd)
     image=gdal.Open(sorted[0],True)
@@ -189,26 +191,33 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True):
     shape=FF.shape(sorted)
     day1=getDate(sorted[0])
     day2=getDate(sorted[len(sorted)-1])
-    lines=[]
-    for k in range(5,(shape[1]-(shape[1]%5))+5,5):
-         lines.append(k)
-    #lines=[670,675,680,685]
+    if test==False:
+        lines=[]
+        for k in range(5,(shape[1]-(shape[1]%5))+5,5):
+            lines.append(k)
+    if test==True:
+        lines=[5,10,15,20]
     fac=lines[1]-lines[0]
-    pixels=pixelCoordinates(shape)
-    save_raster(1,[pixels],shape,"_pixelCoordinates.tif",out_dir,geo,proj)
+   
     p = multiprocessing.Pool(size)
-    result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,odd=odd), lines)
-    changeMap(result_map,shape,day1,day2,out_dir,geo,proj)
-    trainingRaster(result_map,shape,(day1+30),out_dir,geo,proj)
-    trainingRaster(result_map,shape,(day2-3),out_dir,geo,proj)
-    csvResults(result_map,shape,out_dir)
+    result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,odd=odd,test=test), lines)
+    if print==True:
+        pixels=pixelCoordinates(shape)
+        save_raster(1,[pixels],shape,"_pixelCoordinates.tif",out_dir,geo,proj)
+        changeMap(result_map,shape,day1,day2,out_dir,geo,proj)
+        trainingRaster(result_map,shape,(day1+30),out_dir,geo,proj)
+        trainingRaster(result_map,shape,(day2-3),out_dir,geo,proj)
+        csvResults(result_map,shape,out_dir)
     time_final=time.time()-now
     print("total process finished in:", time_final)
 
 # def main():
 #     parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2'
 #     out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/HighRows/"
+#     now1=time.time()
 #     imageCCD(parent_dir,out_dir)
+    
+    
 
 #     # now=time.time()
 #     # sorted=FF.sortImages(dfs["parent_dir"],True)

@@ -68,6 +68,9 @@ System requirements (Ubuntu)
 * liblapack-dev
 * graphviz
 * python-virtualenv
+* geopandas
+* gdal
+* pandas
 
 System requirements (Centos)
 * python3-devel
