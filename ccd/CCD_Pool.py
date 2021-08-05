@@ -1,4 +1,5 @@
 #from ccd.data_input import Allto_list
+from os import write
 from typing import final
 import ccd.FusionFunctions as FF
 from ccd.parameters import defaults as dfs
@@ -182,7 +183,7 @@ def getDate(fusion_tif):
     gordinal = date(int(fusion_tif[-14:-10]), int(fusion_tif[-9:-7]), int(fusion_tif[-6:-4])).toordinal()
     return gordinal
 
-def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, print=True):
+def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
     now=time.time()
     sorted=FF.sortImages(parent_dir,odd)
     image=gdal.Open(sorted[0],True)
@@ -198,51 +199,32 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, print=True):
     if test==True:
         lines=[5,10,15,20]
     fac=lines[1]-lines[0]
-    p = multiprocessing.Pool(size)
+    p = multiprocessing.Pool(size)#processes=None)
     result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,odd=odd,test=test), lines)
-    if print==True:
+    if write==True:
         pixels=pixelCoordinates(shape)
         save_raster(1,[pixels],shape,"_pixelCoordinates.tif",out_dir,geo,proj)
         changeMap(result_map,shape,day1,day2,out_dir,geo,proj)
         trainingRaster(result_map,shape,(day1+30),out_dir,geo,proj)
         trainingRaster(result_map,shape,(day2-3),out_dir,geo,proj)
         csvResults(result_map,shape,out_dir)
-    time_final=time.time()-now
-    print("total process finished in:", time_final)
+    print("total process finished in:".format(time.time()-now))
+
+
 
 # def main():
 #     parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2'
 #     out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/HighRows/"
 #     now1=time.time()
-#     imageCCD(parent_dir,out_dir)
+#     imageCCD(parent_dir,out_dir,test=True,write=False)
     
-    
-
-#     # now=time.time()
-#     # sorted=FF.sortImages(dfs["parent_dir"],True)
-#     # shape=FF.shape(sorted)
-#     # day1=getDate(sorted[0])
-#     # day2=getDate(sorted[len(sorted)-1])
-#     # lines=[]
-#     # for k in range(5,685,5):
-#     #      lines.append(k)
-#     # fac=lines[1]-lines[0]
-#     # size=4
-#     # pixels=pixelCoordinates(shape)
-#     # save_raster(1,[pixels],shape,"_pixelCoordinates.tif")
-#     # p = multiprocessing.Pool(size)
-#     # result_map = p.map(partial(CCD_row,factor=fac), lines)
-#     # changeMap(result_map,shape,day1,day2)
-#     # trainingRaster(result_map,shape,day=day1+30)
-#     # trainingRaster(result_map,shape,day=(day2-3))
-#     # csvResults(result_map,shape)
-#     # time_final=time.time()-now
-#     # print("total process finished in:", time_final)
-
-
-
 # if __name__ == '__main__':
 #     main()
+    
+
+
+
+
 
 
 
