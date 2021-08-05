@@ -189,7 +189,7 @@ def main():
     for k in range(5,685,5):
          lines.append(k)
     fac=lines[1]-lines[0]
-    size=8
+    size=6
     pixels=pixelCoordinates(shape)
     save_raster(1,[pixels],shape,"_pixelCoordinates.tif")
     p = multiprocessing.Pool(size)
