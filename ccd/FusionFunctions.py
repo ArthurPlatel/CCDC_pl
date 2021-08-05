@@ -5,7 +5,7 @@ from datetime import date
 import time
 import ccd
 #import classification as cls
-from parameters import defaults as dfs
+from ccd.parameters import defaults as dfs
 
 
 
