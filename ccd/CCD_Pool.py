@@ -198,7 +198,6 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, print=True):
     if test==True:
         lines=[5,10,15,20]
     fac=lines[1]-lines[0]
-   
     p = multiprocessing.Pool(size)
     result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,odd=odd,test=test), lines)
     if print==True:
