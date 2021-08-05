@@ -199,7 +199,7 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
     if test==True:
         lines=[5,10,15,20]
     fac=lines[1]-lines[0]
-    p = multiprocessing.Pool(processes=None)
+    p = multiprocessing.Pool(size)#processes=None)
     result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,odd=odd,test=test), lines)
     if write==True:
         pixels=pixelCoordinates(shape)
@@ -213,10 +213,11 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
 
 
 # def main():
-#     parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2'
-#     out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/HighRows/"
+#     parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/deforestation_Octave/PF-SR'
+#     out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/Octave_Deforestation"
 #     now1=time.time()
-#     imageCCD(parent_dir,out_dir,test=True,write=False)
+#     imageCCD(parent_dir,out_dir,test=False,write=False)
+#     print("completed in:", time.time()-now1)
     
 # if __name__ == '__main__':
 #     main()
