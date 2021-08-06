@@ -125,6 +125,23 @@ def csvResults(result_map,shape,out_dir):
     #close the file
     f.close()
 
+def csvParameters(out_dir):
+    paramslist=['MEOW_SIZE','PEEK_SIZE','DAY_DELTA','AVG_DAYS_YR',
+    'COEFFICIENT_MIN','COEFFICIENT_MID','COEFFICIENT_MAX',
+    'NUM_OBS_FACTOR','BLUE_IDX','GREEN_IDX','RED_IDX','NIR_IDX',
+    'NDVI','QA_IDX','DETECTION_BANDS','TMASK_BANDS','params',
+    'QA_BITPACKED','QA_FILL','QA_CLEAR','QA_WATER','QA_SHADOW',
+    'QA_CLOUD','QA_CIRRUS1','QA_CIRRUS2','QA_OCCLUSION','CURVE_QA',
+    'CLEAR_OBSERVATION_THRESHOLD','CLEAR_PCT_THRESHOLD','SNOW_PCT_THRESHOLD',
+    'OUTLIER_THRESHOLD','CHANGE_THRESHOLD','T_CONST','vari','FITTER_FN','LASSO_MAX_ITER',
+    'trainingData','n_estimators','oob_score']
+    with open(str(out_dir)+"CCD_Parameters.csv", 'w') as f:
+        #create the csv writer
+        writer = csv.writer(f)
+        print("saving parameters to CSV")
+        for param in paramslist:
+            string=param+":"+str(dfs[param])
+            writer.writerow(string)
 
 #Creates an array based on pixel breakpoints to identify change between two dates
 #To work on, Filter function is not working properly
@@ -144,7 +161,6 @@ def changeMap(result_map,shape,day1,day2,out_dir,geo,proj):
 
 #generates a an array making it easy to identify individual pixel coordinates
 def pixelCoordinates(shape):
-    print(shape)
     bands,rows,columns=shape
     array1=[[float(x+y/10000)for y in range(columns)]for x in range(rows)]
     nparray=np.array(array1)
@@ -198,9 +214,9 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
         for k in range(5,(shape[1]-(shape[1]%5))+5,5):
             lines.append(k)
     if test==True:
-        lines=[5,10,15,20,25,30,35,40]
+        lines=[5,10,15,20]
     fac=lines[1]-lines[0]
-    p = multiprocessing.Pool(size)#processes=None)
+    p = multiprocessing.Pool(size)
     result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,odd=odd,test=test), lines)
     if write==True:
         pixels=pixelCoordinates(shape)
@@ -209,22 +225,22 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
         trainingRaster(result_map,shape,(day1+30),out_dir,geo,proj)
         trainingRaster(result_map,shape,(day2-3),out_dir,geo,proj)
         csvResults(result_map,shape,out_dir)
+        csvParameters(out_dir)
     print("total process finished in:".format(time.time()-now))
 
 
 
+
 # def main():
-#     parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/deforestation_Octave/PF-SR'
-#     out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/Octave_Deforestation"
+#     parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2'
+#     out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/"#hospital/"
 #     now1=time.time()
-#     imageCCD(parent_dir,out_dir,test=False,write=True)
+#     imageCCD(parent_dir,out_dir,test=True,write=True)
 #     print("completed in:", time.time()-now1)
     
 # if __name__ == '__main__':
 #     main()
     
-
-
 
 
 

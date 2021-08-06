@@ -17,7 +17,7 @@ def sortImages(parent_dir,odd=True):
     if odd==True:
         odd=[]
         for image in files:
-            if (int(image[-5:-4])%2) != 0 and (int(image[-5:-4])%3) != 0:
+            if (int(image[-5:-4])%2) != 0 and (int(image[-5:-4])%3) != 0 and (int(image[-5:-4])%5) != 0:
                 odd.append(image)
         images = sorted(odd)
     else:
@@ -172,7 +172,7 @@ def classification_ccd(cx,cy,x_pixels,images,array,day1,day2):
 
 
 
-
-
+# images=sortImages('/Users/arthur.platel/Desktop/Fusion_Images/hospital/PF-SR')
+# print(shape(images))
 
 

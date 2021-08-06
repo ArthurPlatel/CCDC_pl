@@ -318,7 +318,7 @@ def sortImages(parent_dir,odd=False):
     if odd==True:
         odd=[]
         for image in files:
-            if (int(image[-5:-4])%2) != 0 and (int(image[-5:-4])%3) != 0:
+            if (int(image[-5:-4])%2) != 0 and (int(image[-5:-4])%3) != 0 and (int(image[-5:-4])%5) != 0:
                 odd.append(image)
         images = sorted(odd)
     else:
