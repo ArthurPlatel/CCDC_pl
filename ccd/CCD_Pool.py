@@ -190,6 +190,7 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
     geo=image.GetGeoTransform()
     proj=image.GetProjection()
     shape=FF.shape(sorted)
+    print(shape)
     day1=getDate(sorted[0])
     day2=getDate(sorted[len(sorted)-1])
     if test==False:
@@ -197,7 +198,7 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
         for k in range(5,(shape[1]-(shape[1]%5))+5,5):
             lines.append(k)
     if test==True:
-        lines=[5,10,15,20]
+        lines=[5,10,15,20,25,30,35,40]
     fac=lines[1]-lines[0]
     p = multiprocessing.Pool(size)#processes=None)
     result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,odd=odd,test=test), lines)
@@ -216,7 +217,7 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
 #     parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/deforestation_Octave/PF-SR'
 #     out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/Octave_Deforestation"
 #     now1=time.time()
-#     imageCCD(parent_dir,out_dir,test=False,write=False)
+#     imageCCD(parent_dir,out_dir,test=False,write=True)
 #     print("completed in:", time.time()-now1)
     
 # if __name__ == '__main__':
