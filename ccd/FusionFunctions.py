@@ -16,16 +16,22 @@ def sortImages(parent_dir,odd=True):
     files = glob.glob(os.path.join(parent_dir, '*.tif'))
     if odd==True:
         odd=[]
-        for image in files:
-            if (int(image[-5:-4])%2) != 0 and (int(image[-5:-4])%3) != 0 and (int(image[-5:-4])%5) != 0:
-                odd.append(image)
+        for k in range(len(files)):
+            if k%5==0:
+                odd.append(files[k])
+    # if odd==True:
+    #     odd=[]
+    #     for image in files:
+    #         if (int(image[-5:-4])%4) == 0:
+    #             odd.append(image)
         images = sorted(odd)
     else:
         images=sorted(files)
     return images
 
 def shape(sortedImages):
-    image=gdal.Open(sortedImages[0])
+    im=gdal.Open(sortedImages[0])
+    image=gdal.Translate('/vsimem/in_memory_output.tif',im,xRes=dfs['resampleSize'],yRes=dfs['resampleSize'])
     shape=np.shape(image.ReadAsArray())
     return shape
 
@@ -40,7 +46,11 @@ def to_dict(c0,c1,x_pixels,images):
             start_time = time.time()
             if n%100==0:
                 print("processing image {} of {}".format(n, len(images)-1))
-            image=gdal.Open(fusion_tif)
+            im=gdal.Open(fusion_tif)
+            if n==0 or n==len(images-1):
+                image=gdal.Translate('/Users/arthur.platel/Desktop/'+str(n)+".tif",im,xRes=dfs['resampleSize'],yRes=dfs['resampleSize'])
+            else:
+                image=gdal.Translate('/vsimem/in_memory_output.tif',im,xRes=dfs['resampleSize'],yRes=dfs['resampleSize'])
             gordinal = date(int(fusion_tif[-14:-10]), int(fusion_tif[-9:-7]), int(fusion_tif[-6:-4])).toordinal()
             b_ras = image.GetRasterBand(1).ReadAsArray().astype(np.uint16)
             g_ras = image.GetRasterBand(2).ReadAsArray().astype(np.uint16)

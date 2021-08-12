@@ -57,6 +57,7 @@ def tmask(dates, observations, variogram, bands, t_const, avg_days_yr):
 
     # For each band, determine if the delta between predeicted and actual
     # values exceeds the threshold. If it does, then it is an outlier.
+    
     for band_ix in bands:
         fit = regression.fit(tmask_matrix, observations[band_ix])
         predicted = fit.predict(tmask_matrix)

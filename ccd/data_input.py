@@ -4,6 +4,7 @@ import glob, os
 from datetime import date
 import time
 from ccd import detect
+import ccd.FusionFunctions as FF
 #from parameters import defaults as dfs
 
 
@@ -37,6 +38,7 @@ def image(x_diviser, final):
                     time_series["dict"+str(k)][x,y]["red"].append(r_ras[x,y])  
                     time_series["dict"+str(k)][x,y]["nir"].append(n_ras[x,y])    
                     time_series["dict"+str(k)][x,y]["ndvi"].append((n_ras[x,y]-r_ras[x,y])/(n_ras[x,y]+r_ras[x,y]))
+                    time_series["dict"+str(k)][x,y]["ndwi"].append((g_ras[x,y]-n_ras[x,y])/(g_ras[x,y]+n_ras[x,y]))
                     time_series["dict"+str(k)][x,y]["qas"].append(1) 
         n+=1 
         image_time=time.time()-start_time
@@ -52,7 +54,7 @@ def image(x_diviser, final):
 
 def pixel_array(pixel_x,pixel_y, dict):
     pixel=dict[pixel_x,pixel_y]
-    return np.array([pixel['dates'], pixel['blue'], pixel['green'], pixel['red'], pixel['nir'], pixel['ndvi'],pixel['qas']])
+    return np.array([pixel['dates'], pixel['blue'], pixel['green'], pixel['red'], pixel['nir'], pixel['ndvi'],pixel['ndwi'],pixel['qas']])
 
 def getAll(final):
     # files = glob.glob(os.path.join(parent_dir, '*.tif'))
@@ -61,7 +63,7 @@ def getAll(final):
     return ts1
    
 def to_dict(c1,c0,x_pixels,final):
-        time_series={(x,y):{'dates':[],'blue':[],'green':[], 'red':[], 'nir':[],'ndvi':[],'qas':[]} for y in range(c0,c1) for x in range(x_pixels)} 
+        time_series={(x,y):{'dates':[],'blue':[],'green':[], 'red':[], 'nir':[],'ndvi':[],'ndwi':[],'qas':[]} for y in range(c0,c1) for x in range(x_pixels)} 
         n=0
         t=0
         for fusion_tif in final:
@@ -83,6 +85,7 @@ def to_dict(c1,c0,x_pixels,final):
                     time_series[x,y]["red"].append(r_ras[x,y])  
                     time_series[x,y]["nir"].append(n_ras[x,y])    
                     time_series[x,y]["ndvi"].append((n_ras[x,y]-r_ras[x,y])/(n_ras[x,y]+r_ras[x,y]))
+                    time_series[x,y]["ndwi"].append((g_ras[x,y]-n_ras[x,y])/(g_ras[x,y]+n_ras[x,y]))
                     time_series[x,y]["qas"].append(1) 
             image_time=time.time()-start_time
             t+=image_time
@@ -94,7 +97,7 @@ def to_dict(c1,c0,x_pixels,final):
         return time_series
 
 def Allto_dict(c0,c1,x_pixels,final):
-        time_series={(x,y):{'dates':[],'blue':[],'green':[], 'red':[], 'nir':[],'ndvi':[],'qas':[]} for y in range(c0,c1) for x in range(x_pixels)} 
+        time_series={(x,y):{'dates':[],'blue':[],'green':[], 'red':[], 'nir':[],'ndvi':[],'ndwi':[],'qas':[]} for y in range(c0,c1) for x in range(x_pixels)} 
         n=0
         t=0
         for fusion_tif in final:
@@ -116,6 +119,7 @@ def Allto_dict(c0,c1,x_pixels,final):
                     time_series[x,y]["red"].append(r_ras[x,y])  
                     time_series[x,y]["nir"].append(n_ras[x,y])    
                     time_series[x,y]["ndvi"].append((n_ras[x,y]-r_ras[x,y])/(n_ras[x,y]+r_ras[x,y]))
+                    time_series[x,y]["ndwi"].append((g_ras[x,y]-n_ras[x,y])/(g_ras[x,y]+n_ras[x,y]))
                     time_series[x,y]["qas"].append(1) 
             image_time=time.time()-start_time
             t+=image_time
@@ -129,7 +133,7 @@ def Allto_dict(c0,c1,x_pixels,final):
 def Allagain(final):
     n=0
     shape=[4,686,976] #[4,641,689]
-    time_series=[[[[]for r in range(7)]for y in range(shape[2])]for x in range(shape[1])]
+    time_series=[[[[]for r in range(8)]for y in range(shape[2])]for x in range(shape[1])]
     modulo=shape[1]%100
     end=shape[1]-modulo
     for fusion_tif in final:
@@ -153,7 +157,8 @@ def Allagain(final):
                     time_series[x][y][3].append(r_ras[x,y])  
                     time_series[x][y][4].append(n_ras[x,y])    
                     time_series[x][y][5].append((n_ras[x,y]-r_ras[x,y])/(n_ras[x,y]+r_ras[x,y]))
-                    time_series[x][y][6].append(1)
+                    time_series[x][y][6].append((g_ras[x,y]-n_ras[x,y])/(g_ras[x,y]+n_ras[x,y]))
+                    time_series[x][y][7].append(1)
                     # if n==len(final):
                     #     data = np.array(time_series[x][y])
                     #     dates,blues,greens,reds,nirs,ndvis,qas=data
@@ -167,7 +172,8 @@ def Allagain(final):
                     time_series[x][y][3].append(r_ras[x,y])  
                     time_series[x][y][4].append(n_ras[x,y])    
                     time_series[x][y][5].append((n_ras[x,y]-r_ras[x,y])/(n_ras[x,y]+r_ras[x,y]))
-                    time_series[x][y][6].append(1)
+                    time_series[x][y][6].append((g_ras[x,y]-n_ras[x,y])/(g_ras[x,y]+n_ras[x,y]))
+                    time_series[x][y][7].append(1)
                     # if n==len(final):
                     #     data = np.array(time_series[x][y])
                     #     dates,blues,greens,reds,nirs,ndvis,qas=data
@@ -313,12 +319,12 @@ def line(image_dir,lines):
     return output
 
 
-def sortImages(parent_dir,odd=False):
+def sortImages(parent_dir,odd=True):
     files = glob.glob(os.path.join(parent_dir, '*.tif'))
     if odd==True:
         odd=[]
         for image in files:
-            if (int(image[-5:-4])%2) != 0 and (int(image[-5:-4])%3) != 0 and (int(image[-5:-4])%5) != 0:
+            if (int(image[-5:-4])==1) or (int(image[-5:-4])==15):
                 odd.append(image)
         images = sorted(odd)
     else:
@@ -334,13 +340,15 @@ def get_data(parent_dir,pixel_x,pixel_y,odd=False):
     reds = []
     nirs = []
     ndvis = []
+    ndwis = []
     qas = []
     qa = 0
     #files = glob.glob(os.path.join(parent_dir, '*.tif'))
     #final = sorted(files)
-    final=sortImages(parent_dir,odd)
+    final= FF.sortImages(parent_dir,odd)
     for fusion_tif in final:
-        image=gdal.Open(fusion_tif)
+        im=gdal.Open(fusion_tif)
+        image=gdal.Translate('/vsimem/in_memory_output.tif',im,xRes=30,yRes=30)
         year = int(fusion_tif[-14:-10])
         month = int(fusion_tif[-9:-7])
         day = int(fusion_tif[-6:-4])
@@ -358,8 +366,10 @@ def get_data(parent_dir,pixel_x,pixel_y,odd=False):
         nirs.append(nir)
         ndvi = ((nir-red)/(red+nir)*1000)
         ndvis.append(ndvi)
+        ndwi = ((green-nir)/(green+nir)*1000)
+        ndwis.append(ndwi)
         qas.append(qa)
-    return np.array([o_time,blues,greens,reds,nirs,ndvis,qas])
+    return np.array([o_time,blues,greens,reds,nirs,ndvis,ndwis,qas])
     # print(arrayLen)
     # print("Origin = ({}, {})".format(geotransform[0], geotransform[3]))
     # print("Pixel Size = ({}, {})".format(geotransform[1], geotransform[5]))

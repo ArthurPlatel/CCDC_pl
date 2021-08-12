@@ -34,10 +34,11 @@ defaults = {
     'RED_IDX': 2,
     'NIR_IDX': 3,
     'NDVI': 4,
-    'QA_IDX': 5,
+    'NDWI': 5,
+    'QA_IDX': 6,
 
     # Spectral bands that are utilized for detecting change
-    'DETECTION_BANDS': [1,2,3,4],
+    'DETECTION_BANDS': [1,2,3],
 
     # Spectral bands that are utilized for Tmask filtering
     'TMASK_BANDS': [1,2,3,4],
@@ -87,10 +88,11 @@ defaults = {
     'CLEAR_OBSERVATION_THRESHOLD': 5,
     'CLEAR_PCT_THRESHOLD': 0.25,
     'SNOW_PCT_THRESHOLD': 0.75,
-    'OUTLIER_THRESHOLD': 40.888186879610423,
-    'CHANGE_THRESHOLD': 25.086272469388987,
+    'OUTLIER_THRESHOLD': 60,
+    'CHANGE_THRESHOLD':40,
     'T_CONST': 4.89,
-    'vari':80,
+    'vari':90,
+    'resampleSize':30,
 
     # Value added to the median green value for filtering purposes
     #'MEDIAN_GREEN_FILTER': 400,
@@ -106,7 +108,7 @@ defaults = {
    # Classification Settings
    ##############################
 
-    'trainingData':'/Users/arthur.platel/Desktop/Training/TrainingData63021.shp',
+    'trainingData':'/Users/arthur.platel/Desktop/TrainingValues/FinalTrainingData.shp',#'/Users/arthur.platel/Desktop/CCD_ResampleOutputs/CZU_Fire30m/TrainingData2/FinalAll.shp',
     'n_estimators':1000,
     'oob_score':True,
 

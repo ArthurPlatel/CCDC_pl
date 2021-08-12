@@ -12,17 +12,23 @@ from collections import defaultdict
 import multiprocessing
 from functools import partial
 import csv
+import os
 
 #Function to ingetst time seties data by row from a Fusion image stack
-def rowData(r0,r1,imageCollection):
+def rowData(r0,r1,imageCollection,out_dir,resample=30):
     n=0
     shape = FF.shape(imageCollection)
     #time_series=np.zeros((shape[2],7,1))
-    time_series=[[[[]for r in range(7)]for y in range(shape[2])]for x in range(r1-r0)]
+    time_series=[[[[]for r in range(8)]for y in range(shape[2])]for x in range(r1-r0)]
     for fusion_tif in imageCollection:
+        im=gdal.Open(fusion_tif)
+        if n==0 or n==(len(imageCollection)-1):
+            day= str(fusion_tif[-14:-10])+"_"+str(fusion_tif[-9:-7])+'_'+str(fusion_tif[-6:-4])
+            image=gdal.Translate(out_dir+'resample'+str(resample)+"m"+day,im,xRes=resample,yRes=resample)
+        else:
+            image=gdal.Translate('/vsimem/in_memory_output.tif',im,xRes=resample,yRes=resample)
         start_time = time.time()
         n+=1
-        image=gdal.Open(fusion_tif)
         gordinal = date(int(fusion_tif[-14:-10]), int(fusion_tif[-9:-7]), int(fusion_tif[-6:-4])).toordinal()
         b_ras = image.GetRasterBand(1).ReadAsArray().astype(np.uint16)
         g_ras = image.GetRasterBand(2).ReadAsArray().astype(np.uint16)
@@ -36,7 +42,8 @@ def rowData(r0,r1,imageCollection):
                 time_series[x][y][3].append(r_ras[x+r0,y])  
                 time_series[x][y][4].append(n_ras[x+r0,y])    
                 time_series[x][y][5].append((((n_ras[x+r0,y]-r_ras[x+r0,y])/(n_ras[x+r0,y]+r_ras[x+r0,y])*1000)))
-                time_series[x][y][6].append(1)
+                time_series[x][y][6].append((g_ras[x,y]-n_ras[x,y])/(g_ras[x,y]+n_ras[x,y]))
+                time_series[x][y][7].append(1)
         image_time=time.time()-start_time
         if n%100==0:
             print("image {} of {} completed in: {} \n".format(n, len(imageCollection),image_time))
@@ -47,20 +54,20 @@ def CCD(pixel_data):
     global pix 
     
     data=np.array(pixel_data)
-    dates,blues,greens,reds,nirs,ndvis,qas=data
-    result=detect(dates, greens,blues, reds, nirs, ndvis, qas, dfs['params'])
+    dates,blues,greens,reds,nirs,ndvis,ndwis,qas=data
+    result=detect(dates, greens,blues, reds, nirs, ndvis, ndwis, qas, dfs['params'])
     final_time=time.time()-now
-    print("Finished ccding in",pix,final_time)
+    print("Finished ccding {} in {}".format(pix,final_time))
     pix+=1   
     return result["change_models"]
   
 #CCD analysis by row  
-def CCD_row(r1,factor,parent_dir,odd,test):
+def CCD_row(r1,factor,parent_dir,out_dir,odd,test,resample=30):
     now=time.time()
     r0=r1-factor
     image_collection=FF.sortImages(parent_dir,odd)
     print("processing row:",r0)
-    rows=rowData(r0,r1,image_collection)
+    rows=rowData(r0,r1,image_collection,out_dir,resample)
     rank = multiprocessing.current_process()
     print(rank)
     if test==False:
@@ -89,26 +96,26 @@ def toArray(result_map,band,data,num,shape,day):
 
 
 
-def toDF(seq):
-    pixel=pd.DataFrame({
-            #'RMSE blue':[seq["blue"]["rmse"]],
-            #'RMSE green':[seq['green']['rmse']],
-            'RMSE red':[seq['red']['rmse']],
-            'RMSE nir':[seq['nir']['rmse']],
-            'RMSE ndvi':[seq['ndvi']['rmse']],
-            #'Coef1 blue':[seq['blue']["coefficients"][0]],
-            #'Coef1 green':[seq['green']["coefficients"][0]],
-            'Coef1 red':[seq['red']["coefficients"][0]],
-            'Coef1 nir':[seq['nir']["coefficients"][0]],
-            'Coef1 ndvi':[seq['ndvi']["coefficients"][0]],
-        })
-    return pixel
+# def toDF(seq):
+#     pixel=pd.DataFrame({
+#             #'RMSE blue':[seq["blue"]["rmse"]],
+#             #'RMSE green':[seq['green']['rmse']],
+#             'RMSE red':[seq['red']['rmse']],
+#             'RMSE nir':[seq['nir']['rmse']],
+#             'RMSE ndvi':[seq['ndvi']['rmse']],
+#             #'Coef1 blue':[seq['blue']["coefficients"][0]],
+#             #'Coef1 green':[seq['green']["coefficients"][0]],
+#             'Coef1 red':[seq['red']["coefficients"][0]],
+#             'Coef1 nir':[seq['nir']["coefficients"][0]],
+#             'Coef1 ndvi':[seq['ndvi']["coefficients"][0]],
+#         })
+#     return pixel
 
 import pandas as pd
 def csvResults(result_map,shape,out_dir):
     emptyArray=np.zeros(shape[1:3])
     dataFrames=pd.DataFrame([])
-    field_names = ['start_day', 'end_day', 'break_day','observation_count','change_probability','curve_qa','blue','green','red','nir','ndvi','pixel']
+    field_names = ['start_day', 'end_day', 'break_day','observation_count','change_probability','curve_qa','blue','green','red','nir','ndvi','ndwi','pixel']
     with open(str(out_dir)+"CCD_resultsDict.csv", 'w') as f:
         #create the csv writer
         writer = csv.writer(f)
@@ -133,7 +140,7 @@ def csvParameters(out_dir):
     'QA_BITPACKED','QA_FILL','QA_CLEAR','QA_WATER','QA_SHADOW',
     'QA_CLOUD','QA_CIRRUS1','QA_CIRRUS2','QA_OCCLUSION','CURVE_QA',
     'CLEAR_OBSERVATION_THRESHOLD','CLEAR_PCT_THRESHOLD','SNOW_PCT_THRESHOLD',
-    'OUTLIER_THRESHOLD','CHANGE_THRESHOLD','T_CONST','vari','FITTER_FN','LASSO_MAX_ITER',
+    'OUTLIER_THRESHOLD','CHANGE_THRESHOLD','T_CONST','vari','resampleSize','FITTER_FN','LASSO_MAX_ITER',
     'trainingData','n_estimators','oob_score']
     with open(str(out_dir)+"CCD_Parameters.csv", 'w') as f:
         #create the csv writer
@@ -162,7 +169,7 @@ def changeMap(result_map,shape,day1,day2,out_dir,geo,proj):
 #generates a an array making it easy to identify individual pixel coordinates
 def pixelCoordinates(shape):
     bands,rows,columns=shape
-    array1=[[float(x+y/10000)for y in range(columns)]for x in range(rows)]
+    array1=[[float(x+y/100000)for y in range(columns)]for x in range(rows)]
     nparray=np.array(array1)
     return nparray
 
@@ -183,9 +190,9 @@ def save_raster(band_count, arrays,shape,filename,out_dir,geo,proj,format='GTiff
 #create training rasters to train CCDC classifier
 def trainingRaster(result_map,shape,day,out_dir,geo,proj):
     trainingArrays=[]
-    bands = ['blue','green','red','nir','ndvi']
+    bands = ['blue','green','red','nir','ndvi','ndwi']
     for band in bands:
-        trainingArrays.append(toArray(result_map,"blue","rmse",0,shape,day))
+        trainingArrays.append(toArray(result_map,band,"rmse",0,shape,day))
     for band in bands:
         # if band=='ndvi':
         #         trainingArrays.append(toArray(result_map,band,"coefficients",0,shape,day))
@@ -199,16 +206,25 @@ def getDate(fusion_tif):
     gordinal = date(int(fusion_tif[-14:-10]), int(fusion_tif[-9:-7]), int(fusion_tif[-6:-4])).toordinal()
     return gordinal
 
-def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
+def getOridnal(ordinal):
+    day=date.fromordinal(ordinal)
+    return day
+
+def imageCCD(parent_dir, text,size=4,resample=30,odd=True, test=False, write=True):
     now=time.time()
     sorted=FF.sortImages(parent_dir,odd)
-    image=gdal.Open(sorted[0],True)
+    im=gdal.Open(sorted[0],True)
+    image=gdal.Translate('/vsimem/in_memory_output.tif',im,xRes=resample,yRes=resample)
     geo=image.GetGeoTransform()
     proj=image.GetProjection()
-    shape=FF.shape(sorted)
+    shape=np.shape(image.ReadAsArray())
     print(shape)
     day1=getDate(sorted[0])
     day2=getDate(sorted[len(sorted)-1])
+    out_dir='/Users/arthur.platel/Desktop/CCD_ResampleOutputs/'+str(text)+str(resample)+'m/'
+    os.mkdir(out_dir)
+    pixels=pixelCoordinates(shape)
+    save_raster(1,[pixels],shape,"_pixelCoordinates.tif",out_dir,geo,proj)
     if test==False:
         lines=[]
         for k in range(5,(shape[1]-(shape[1]%5))+5,5):
@@ -217,32 +233,27 @@ def imageCCD(parent_dir, out_dir,size=4,odd=True, test=False, write=True):
         lines=[5,10,15,20]
     fac=lines[1]-lines[0]
     p = multiprocessing.Pool(size)
-    result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,odd=odd,test=test), lines)
+    result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,out_dir=out_dir,odd=odd,test=test,resample=resample), lines)
     if write==True:
-        pixels=pixelCoordinates(shape)
-        save_raster(1,[pixels],shape,"_pixelCoordinates.tif",out_dir,geo,proj)
-        changeMap(result_map,shape,day1,day2,out_dir,geo,proj)
-        trainingRaster(result_map,shape,(day1+30),out_dir,geo,proj)
-        trainingRaster(result_map,shape,(day2-3),out_dir,geo,proj)
+        trainingRaster(result_map,shape,(day1+90),out_dir,geo,proj)
+        trainingRaster(result_map,shape,(day2-90),out_dir,geo,proj)
         csvResults(result_map,shape,out_dir)
+        changeMap(result_map,shape,day1,day2,out_dir,geo,proj)
         csvParameters(out_dir)
     print("total process finished in:".format(time.time()-now))
 
 
 
 
-# def main():
-#     parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2'
-#     out_dir= "/Users/arthur.platel/Desktop/CCDC_Output/"#hospital/"
-#     now1=time.time()
-#     imageCCD(parent_dir,out_dir,test=True,write=True)
-#     print("completed in:", time.time()-now1)
+def main():
+    parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/Imperial_Subset'
+    #out_dir= "/Users/arthur.platel/Desktop/CCD_ResampleOutputs/hospital/"
+    now1=time.time()
+    imageCCD(parent_dir,'ImperialSubset',resample=30,test=False,write=True,odd=True)
+    print("completed in:", time.time()-now1)
     
-# if __name__ == '__main__':
-#     main()
-    
-
-
+if __name__ == '__main__':
+    main()
 
 
 

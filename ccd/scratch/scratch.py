@@ -1,2 +1,3 @@
-for k in range(4):
-    print(k)
+from ccd.CCD_Pool import getOridnal
+
+print(getOridnal(737485))

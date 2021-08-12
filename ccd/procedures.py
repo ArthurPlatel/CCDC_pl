@@ -85,7 +85,7 @@ def permanent_snow_procedure(dates, observations, fitter_fn, quality,
               for spectrum in spectral_obs]
 
     magnitudes = np.zeros(shape=(observations.shape[0],))
-    print("magnitudes: {}".format(magnitudes))
+
 
     # White space is cheap, so let's use it
     result = results_to_changemodel(fitted_models=models,
@@ -400,8 +400,8 @@ def initialize(dates, observations, fitter_fn, model_window, processing_mask,
             model_window = slice(model_window.start, model_window.stop + 1)
             continue
 
-        # Make sure we still have enough observations and enough time after
-        # the tmask removal.
+        #Make sure we still have enough observations and enough time after
+        #the tmask removal.
         if not enough_time(tmask_period, day_delta) or \
                 not enough_samples(tmask_period, meow_size):
 

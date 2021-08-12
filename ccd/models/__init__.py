@@ -55,4 +55,5 @@ def results_to_changemodel(fitted_models, start_day, end_day, break_day,
             'green': spectral_models[1],
             'red': spectral_models[2],
             'nir': spectral_models[3],
-            'ndvi': spectral_models[4]}
+            'ndvi': spectral_models[4],
+            'ndwi': spectral_models[5]}
