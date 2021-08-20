@@ -30,21 +30,21 @@ def rasterData(image):
         'RMSE red':[(image.GetRasterBand(3).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
         'RMSE nir':[(image.GetRasterBand(4).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
         'RMSE ndvi':[(image.GetRasterBand(5).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef1 blue':[(image.GetRasterBand(6).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef2 blue':[(image.GetRasterBand(7).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef3 blue':[(image.GetRasterBand(8).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef1 green':[(image.GetRasterBand(9).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef2 green':[(image.GetRasterBand(10).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef3 green':[(image.GetRasterBand(11).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef1 red':[(image.GetRasterBand(12).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef2 red':[(image.GetRasterBand(13).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef1 blue':[(image.GetRasterBand(7).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef2 blue':[(image.GetRasterBand(8).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef3 blue':[(image.GetRasterBand(9).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef1 green':[(image.GetRasterBand(10).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef2 green':[(image.GetRasterBand(11).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef3 green':[(image.GetRasterBand(12).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef1 red':[(image.GetRasterBand(13).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef2 red':[(image.GetRasterBand(14).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
         'Coef3 red':[(image.GetRasterBand(14).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef1 nir':[(image.GetRasterBand(15).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef2 nir':[(image.GetRasterBand(16).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef3 nir':[(image.GetRasterBand(17).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef1 ndvi':[(image.GetRasterBand(18).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef2 ndvi':[(image.GetRasterBand(19).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
-        'Coef3 ndvi':[(image.GetRasterBand(20).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef1 nir':[(image.GetRasterBand(16).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef2 nir':[(image.GetRasterBand(17).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef3 nir':[(image.GetRasterBand(18).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef1 ndvi':[(image.GetRasterBand(19).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef2 ndvi':[(image.GetRasterBand(20).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
+        'Coef3 ndvi':[(image.GetRasterBand(21).ReadAsArray())[x][y]for y in range(col) for x in range(row)],
     })
     return rd
 
@@ -54,10 +54,13 @@ def createClassifier():
     classes = gdf["label"].unique()
     class_names=[0 for k in range(len(classes)) ]
     class_ids=gdf['id'].unique()
+    print(class_ids)
+    print(classes)
     for k in range(len(classes)):
         class_names[int(class_ids[k])]=classes[k]
     print("\nBuilding Random Forest Classifier")
     print("LandClasses: {} With values {}\n".format(classes,class_ids))
+    print(len(gdf))
     data=pd.DataFrame({
         'RMSE blue':[gdf.iloc[k][2]for k in range(len(gdf))],
         'RMSE green':[gdf.iloc[k][3]for k in range(len(gdf))],
@@ -97,17 +100,17 @@ def createClassifier():
     accuracy = accuracy_score(y_test,y_pred)
     confusion= confusion_matrix(y_test,y_pred)
     # Plot non-normalized confusion matrix
-    titles_options = [("Confusion matrix, without normalization", None),
-                  ("Normalized confusion matrix", 'true')]
-    for title, normalize in titles_options:
-        disp = plot_confusion_matrix(clf, X_test, y_test,
-                                    display_labels=class_names,
-                                    cmap=plt.cm.Blues,
-                                    normalize=normalize)
-        disp.ax_.set_title(title)
-        print(title)
-        print(disp.confusion_matrix)
-    plt.show()
+    # titles_options = [("Confusion matrix, without normalization", None),
+    #               ("Normalized confusion matrix", 'true')]
+    # for title, normalize in titles_options:
+    #     disp = plot_confusion_matrix(clf, X_test, y_test,
+    #                                 display_labels=class_names,
+    #                                 cmap=plt.cm.Blues,
+    #                                 normalize=normalize)
+    #     disp.ax_.set_title(title)
+    #     print(title)
+    #     print(disp.confusion_matrix)
+    # plt.show()
     #Print accuracy results
     if parameters.defaults['oob_score']:
         #print(confusion)
@@ -117,7 +120,7 @@ def createClassifier():
     print("Classifier Complete \n")
     return clf
 
-createClassifier()
+
 
     # b='/Users/arthur.platel/Desktop/ResampleTest/2018-01-31training.tif'
     # a='/Users/arthur.platel/Desktop/ResampleTest/2021-06-28training.tif'
@@ -206,3 +209,4 @@ def classify(df,classifier):
 
 # # For prediction
 # y_pred = regressor.predict(X_train)
+createClassifier()
