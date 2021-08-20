@@ -1,30 +1,23 @@
 ############################
 # Default Configuration Options
 ############################
+
+
 defaults = {
-     #'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/SantaCruz_NoFire',
-    #'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/deforestation_Octave/PF-SR',
-    'parent_dir': '/Users/arthur.platel/Desktop/Fusion_Images/CZU_FireV2',
-    #'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/Imperial_Subset',
-    #'parent_dir': '/Users/arthur.platel/Desktop/Fusion_Images/SantaCruz_NoFire',
-    'out_dir':"/Users/arthur.platel/Desktop/CCDC_Output/CZU_FireV2/",
-    #'out_dir':'/home/arthur.platel/ccd_out/sandypointV3/',
-    #'parent_dir':'/home/arthur.platel/FusionImages/sandypointV3/ccd-sandy-point-ca-v3/site-1/PF-SR',
-    #parent_dir = '/home/arthur.platel/FusionImages/ccd-sandy-point-ca-2/site-1/PF-SR',
-    'MEOW_SIZE': 12,
+# Most important CCDC Variables
+    'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/hospital/PF-SR',
+    'resampleResolution':30,   #if original 3m resolution required, set to 3
+    'nth':1,    #use every nth image from image stack for analysis, nth=1 if every image should be used
+    'pool_size':4, #number of multiprocessing pools to use in CCDC analysis
+    'num_rows': 5, #number of pixel rows to process at a time
+    'MEOW_SIZE': 12, #minimum expected observation window needed to produce a fit.
     'PEEK_SIZE': 8,
-    'DAY_DELTA': 365,
-    'AVG_DAYS_YR': 365.2425,
-
-    # 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
-    'COEFFICIENT_MIN': 4,
-    'COEFFICIENT_MID': 6,
-    'COEFFICIENT_MAX': 8,
-
-    # Value used to determine the minimum number of observations required for a
-    # defined number of coefficients
-    # e.g. COEFFICIENT_MIN * NUM_OBS_FACTOR = 12
-    'NUM_OBS_FACTOR': 3,
+    'DAY_DELTA': 365, #number of days required for a years worth of data, defined to be 365
+    'AVG_DAYS_YR':365.2425,
+    'OUTLIER_THRESHOLD': 50,
+    'CHANGE_THRESHOLD':25,
+    'T_CONST': 4.89,
+    'vari':80,
 
     ############################
     # Define spectral band indices on input observations array
@@ -38,10 +31,40 @@ defaults = {
     'QA_IDX': 6,
 
     # Spectral bands that are utilized for detecting change
-    'DETECTION_BANDS': [1,2,3],
+    'DETECTION_BANDS': [1,2,3,4],
 
     # Spectral bands that are utilized for Tmask filtering
     'TMASK_BANDS': [1,2,3,4],
+
+
+    ##############################
+   # Classification Settings
+   ##############################
+     # shp file containing training data for classification
+    'trainingData':'/Users/arthur.platel/Desktop/Fusion_Images/deforestationV2/PF-SR/CCD_Output3m_working/Training/AllDeforestation.shp',
+    'CCD_output_CSVfile':'/Users/arthur.platel/Desktop/Fusion_Images/hospital/PF-SR/CCD_Output10m_resampled/CCD_resultsDict.csv',
+    'className':'DeforestationClass', # output classification raster name
+    'n_estimators':1000,
+    'oob_score':True,
+
+     ############################
+    # Values related to model fitting
+    ############################
+    'FITTER_FN': 'ccd.models.lasso.fitted_model',
+    'LASSO_MAX_ITER': 3000,
+
+    # 2 for tri-modal; 2 for bi-modal; 2 for seasonality; 2 for linear
+    'COEFFICIENT_MIN': 4,
+    'COEFFICIENT_MID': 6,
+    'COEFFICIENT_MAX': 8,
+
+    # Value used to determine the minimum number of observations required for a
+    # defined number of coefficients
+    # e.g. COEFFICIENT_MIN * NUM_OBS_FACTOR = 12
+    'NUM_OBS_FACTOR': 3,
+
+
+    
 
     ############################
     # Representative values in the QA band
@@ -55,14 +78,6 @@ defaults = {
                 'QA_CLOUD': 4},
 
     'QA_BITPACKED': True,
-    # original CFMask values
-    #QA_FILL: 255
-    #QA_CLEAR: 0
-    #QA_WATER: 1
-    #QA_SHADOW: 2
-    #QA_SNOW: 3
-    #QA_CLOUD: 4
-    # ARD bitpacked offsets
     'QA_FILL': 0,
     'QA_CLEAR': 1,
     'QA_WATER': 2,
@@ -88,29 +103,13 @@ defaults = {
     'CLEAR_OBSERVATION_THRESHOLD': 5,
     'CLEAR_PCT_THRESHOLD': 0.25,
     'SNOW_PCT_THRESHOLD': 0.75,
-    'OUTLIER_THRESHOLD': 60,
-    'CHANGE_THRESHOLD':40,
-    'T_CONST': 4.89,
-    'vari':90,
-    'resampleSize':30,
+    
 
     # Value added to the median green value for filtering purposes
     #'MEDIAN_GREEN_FILTER': 400,
 
-    ############################
-    # Values related to model fitting
-    ############################
-    'FITTER_FN': 'ccd.models.lasso.fitted_model',
-    'LASSO_MAX_ITER': 1000,
     
 
-    ##############################
-   # Classification Settings
-   ##############################
-
-    'trainingData':'/Users/arthur.platel/Desktop/TrainingValues/FinalTrainingData.shp',#'/Users/arthur.platel/Desktop/CCD_ResampleOutputs/CZU_Fire30m/TrainingData2/FinalAll.shp',
-    'n_estimators':1000,
-    'oob_score':True,
 
 }
 

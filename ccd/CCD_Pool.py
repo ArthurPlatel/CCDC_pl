@@ -13,6 +13,7 @@ import multiprocessing
 from functools import partial
 import csv
 import os
+pix=0
 
 #Function to ingetst time seties data by row from a Fusion image stack
 def rowData(r0,r1,imageCollection,out_dir,resample=30):
@@ -42,13 +43,13 @@ def rowData(r0,r1,imageCollection,out_dir,resample=30):
                 time_series[x][y][3].append(r_ras[x+r0,y])  
                 time_series[x][y][4].append(n_ras[x+r0,y])    
                 time_series[x][y][5].append((((n_ras[x+r0,y]-r_ras[x+r0,y])/(n_ras[x+r0,y]+r_ras[x+r0,y])*1000)))
-                time_series[x][y][6].append((g_ras[x,y]-n_ras[x,y])/(g_ras[x,y]+n_ras[x,y]))
+                time_series[x][y][6].append((((g_ras[x+r0,y]-n_ras[x+r0,y])/(g_ras[x+r0,y]+n_ras[x+r0,y])*1000)))
                 time_series[x][y][7].append(1)
         image_time=time.time()-start_time
         if n%100==0:
             print("image {} of {} completed in: {} \n".format(n, len(imageCollection),image_time))
     return time_series 
-pix=0
+
 def CCD(pixel_data):
     now=time.time()
     global pix 
@@ -73,7 +74,7 @@ def CCD_row(r1,factor,parent_dir,out_dir,odd,test,resample=30):
     if test==False:
         new=[[((CCD(rows[x][y])))for y in range(np.shape(rows)[1])]for x in range(np.shape(rows)[0])]
     if test==True:
-        new=[[((CCD(rows[x][y])))for y in range(5)]for x in range(np.shape(rows)[0])]
+        new=[[((CCD(rows[x][y])))for y in range(100)]for x in range(np.shape(rows)[0])]
     print("processed in {}".format(time.time()-now))
     return new
 
@@ -236,7 +237,7 @@ def imageCCD(parent_dir, text,size=4,resample=30,odd=True, test=False, write=Tru
     result_map = p.map(partial(CCD_row,factor=fac,parent_dir=parent_dir,out_dir=out_dir,odd=odd,test=test,resample=resample), lines)
     if write==True:
         trainingRaster(result_map,shape,(day1+90),out_dir,geo,proj)
-        trainingRaster(result_map,shape,(day2-90),out_dir,geo,proj)
+        trainingRaster(result_map,shape,(day2-200),out_dir,geo,proj)
         csvResults(result_map,shape,out_dir)
         changeMap(result_map,shape,day1,day2,out_dir,geo,proj)
         csvParameters(out_dir)
@@ -246,10 +247,10 @@ def imageCCD(parent_dir, text,size=4,resample=30,odd=True, test=False, write=Tru
 
 
 def main():
-    parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/Imperial_Subset'
+    
     #out_dir= "/Users/arthur.platel/Desktop/CCD_ResampleOutputs/hospital/"
     now1=time.time()
-    imageCCD(parent_dir,'ImperialSubset',resample=30,test=False,write=True,odd=True)
+    imageCCD(parent_dir,'ImperialSubsetV2',resample=30,test=True,write=True,odd=True)
     print("completed in:", time.time()-now1)
     
 if __name__ == '__main__':

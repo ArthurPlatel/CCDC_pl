@@ -68,8 +68,9 @@ def gen_acquisition_delta(interval):
         gen_acquisition_delta('R90/P16D/2000-01-01')
     """
     epoch = datetime.datetime.utcfromtimestamp(0).date()
-    dates = gen_acquisition_dates(interval)
-    yield [(date-epoch).days for date in dates]
+    print(epoch)
+    #dates = gen_acquisition_dates(interval)
+    #yield [(date-epoch).days for date in dates]
 
 
 def acquisition_delta(interval):
@@ -114,7 +115,7 @@ def sample_line(time_range, bands=7):
     observations = np.array([line(times) for _ in range(bands)])
     return times, observations
 
-
+gen_acquisition_delta("hello")
 # sample1 = read_data("test/resources/sample_1.csv")
 # sample2 = read_data("test/resources/sample_2.csv")
 # persistent_snow = read_data("test/resources/sample_WA_grid08_row9_col2267_persistent_snow.csv")
