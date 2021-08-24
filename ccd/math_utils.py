@@ -39,10 +39,12 @@ def adjusted_variogram(dates, observations):
         var = dates[1 + idx:] - dates[:-idx - 1]
 
         majority = mode(var)[0][0]
+        #create adusted variogram vairable based on original Landsat algorithim
+        variable=dfs['vari']/dfs['nth']
 
-        if majority > dfs["vari"]:
+        if majority > variable:
             diff = observations[:, 1 + idx:] - observations[:, :-idx - 1]
-            ids = var > dfs["vari"]
+            ids = var > variable
 
             vario = np.median(np.abs(diff[:, ids]), axis=1)
             break

@@ -2,8 +2,8 @@ import csv
 from math import nan
 import pandas as pd
 from pandas.core import arrays
-from classification import createClassifier
-from classification import classify
+from Build_RFC import createClassifier
+from Build_RFC import classify
 from datetime import date
 import numpy as np
 from pandas.core.dtypes.missing import notna

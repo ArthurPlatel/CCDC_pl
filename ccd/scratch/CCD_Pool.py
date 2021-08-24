@@ -1,7 +1,7 @@
 #from ccd.data_input import Allto_list
 from os import write
 from typing import final
-import ccd.FusionFunctions as FF
+import ccd.data_input as FF
 from ccd.parameters import defaults as dfs
 import numpy as np
 import time

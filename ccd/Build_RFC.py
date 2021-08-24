@@ -10,7 +10,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import plot_confusion_matrix
 from ccd import parameters
 import matplotlib.pyplot as plt
-from ccd.CCD_Pool import save_raster
+from ccd.CCD_master import save_raster
 import time
 
 
@@ -99,6 +99,8 @@ def createClassifier():
     y_pred=clf.predict(X_test)
     accuracy = accuracy_score(y_test,y_pred)
     confusion= confusion_matrix(y_test,y_pred)
+
+    ########Plot Confusion Matrix#####
     # Plot non-normalized confusion matrix
     # titles_options = [("Confusion matrix, without normalization", None),
     #               ("Normalized confusion matrix", 'true')]
@@ -111,6 +113,8 @@ def createClassifier():
     #     print(title)
     #     print(disp.confusion_matrix)
     # plt.show()
+    ########### End Plot#############
+
     #Print accuracy results
     if parameters.defaults['oob_score']:
         #print(confusion)
@@ -120,44 +124,8 @@ def createClassifier():
     print("Classifier Complete \n")
     return clf
 
-
-
-    # b='/Users/arthur.platel/Desktop/ResampleTest/2018-01-31training.tif'
-    # a='/Users/arthur.platel/Desktop/ResampleTest/2021-06-28training.tif'
-    # before=gdal.Open(b)
-    # after=gdal.Open(a)
-    # geo=before.GetGeoTransform()
-    # proj=before.GetProjection()
-    # #shape=np.shape(before)
     
-    # # # plt.imshow(crop[0])
-    # # # plt.show()
-    # print("Classifying Rasters")
-    # dfBefore=rasterData(before)
-    # dfAfter=rasterData(after)
-    # predictBefore=clf.predict(dfBefore)
-    # predictAfter=clf.predict(dfAfter)
-    # shape=np.shape(before.ReadAsArray())
-    # outputArrays=[np.zeros((shape[1],shape[2])),np.zeros((shape[1],shape[2]))]
-    # for k in range(len(predictBefore)):
-    #     r=int(k/(shape[2]))
-    #     c=k%(shape[2])
-    #     outputArrays[0][r][c]=predictBefore[k]
-    # for k in range(len(predictAfter)):
-    #     r=int(k/(shape[2]))
-    #     c=k%(shape[2])
-      
-    #     outputArrays[1][r][c]=predictBefore[k]
-    # output='/Users/arthur.platel/Desktop/'
-    # save_raster(1,outputArrays,shape,"fireRasterTrial",output,geo,proj)
-
-
-    
-
-
-#         #Classification function
-
-# #clf=createClassifier()
+# classify individual pixel data
 def classify(df,classifier):
     class_pred=classifier.predict(df)[0]
     return class_pred

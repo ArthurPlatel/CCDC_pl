@@ -22,7 +22,7 @@ def loadImages(parent_dir,sample_size,nth=1):
     #Function to only use every nth image instead of the whole stack
     files=[]
     for k in range(len(allFiles)):
-                if k%nth==0:
+                if k%dfs['nth']==0:
                     files.append(allFiles[k])
     image0=gdal.Open(files[0])
 
@@ -133,8 +133,8 @@ def inputData(r0,r1,images,ras_data):
                 time_series[l][y][2].append(green[x,y])  
                 time_series[l][y][3].append(red[x,y])  
                 time_series[l][y][4].append(nir[x,y])    
-                time_series[l][y][5].append((((nir[x,y]-red[x,y])/(nir[x,y]+red[x,y])*1000)))
-                time_series[l][y][6].append((((green[x,y]-nir[x,y])/(green[x,y]+nir[x,y])*1000)))
+                time_series[l][y][5].append(((nir[x,y]-red[x,y])/(nir[x,y]+red[x,y]))*1000)
+                time_series[l][y][6].append(((green[x,y]-nir[x,y])/(green[x,y]+nir[x,y]))*1000)
                 time_series[l][y][7].append(1)
     print("{} completed ingesting images in {}".format(str(multiprocessing.current_process())[-42:-30],time.time()-imageTime))
     return time_series,rows
@@ -284,10 +284,12 @@ def main():
     allFiles = glob.glob(os.path.join(parent_dir, '*.tif'))
     day1=getDate(images[0])
     day2=getDate(images[-1])
+  
 
     #create ouptut directory if it dosen't exist
     if not os.path.isdir(output):
         os.mkdir(output)
+    print(output)
     resample(images,ras_data)
     csvParameters(ras_data,size,nth,num,parent_dir,)
     tuples=rowTuples(num,ras_data,size)
@@ -296,8 +298,8 @@ def main():
     pixelCoordinates(ras_data)
     result_map = p.map(partial(detectRows,ras_data=ras_data,images=images),tuples)
     csvResults(result_map,ras_data)
-    changeArray(result_map,day1,day2,ras_data)
-    days=[(day1+6),(day2-15)]
+    changeArray(result_map,day1+15,day2-90,ras_data)
+    days=[(day1+15),(day2-90)]
     for day in days:
         rmse=[toArray(result_map, str(band),"rmse",day,ras_data)for band in bands]
         coefficients=[toArray(result_map,str(band),"coefficients",day,ras_data,k)for k in range(3)for band in bands]

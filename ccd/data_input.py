@@ -4,14 +4,13 @@ import glob, os
 from datetime import date
 import time
 from ccd import detect
-import ccd.FusionFunctions as FF
 from ccd.parameters import defaults as dfs
 
 
 
 
 
-def get_data(parent_dir,pixel_x,pixel_y,sampleSize,odd=False):
+def get_data(parent_dir,pixel_x,pixel_y,sampleSize,nth):
     #initialize empty lists
     o_time = []
     greens = []
@@ -24,7 +23,8 @@ def get_data(parent_dir,pixel_x,pixel_y,sampleSize,odd=False):
     qa = 0
     #files = glob.glob(os.path.join(parent_dir, '*.tif'))
     #final = sorted(files)
-    final= FF.sortImages(parent_dir,odd)
+    final= sortImages(parent_dir,nth)
+    print(len(final))
     for fusion_tif in final:
         image0=gdal.Open(fusion_tif)
         if sampleSize!=3:
@@ -52,6 +52,23 @@ def get_data(parent_dir,pixel_x,pixel_y,sampleSize,odd=False):
         ndwis.append(ndwi)
         qas.append(qa)
     return np.array([o_time,blues,greens,reds,nirs,ndvis,ndwis,qas])
+
+
+
+def sortImages(parent_dir,nth):
+    files = glob.glob(os.path.join(parent_dir, '*.tif'))
+    file_list=[]
+    for k in range(len(files)):
+        if k%nth==0:
+            file_list.append(files[k])
+        images = sorted(file_list)
+    return images
+
+def shape(sortedImages):
+    image=gdal.Open(sortedImages[0])
+    image=gdal.Warp('/vsimem/in_memory_output.tif',im,xRes=dfs['resampleSize'],yRes=dfs['resampleSize'],sampleAlg='average')
+    shape=np.shape(image.ReadAsArray())
+    return shape
 
 
 
