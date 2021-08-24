@@ -5,7 +5,7 @@
 
 defaults = {
 # Most important CCDC Variables
-    'parent_dir':'~/FusionImages/PF-SR/',
+    'parent_dir':'/home/arthur.platel/FusionImages/PF-SR',
     'resampleResolution':30,   #if original 3m resolution required, set to 3
     'nth':5,    #use every nth image from image stack for analysis, nth=1 if every image should be used
     'pool_size':4, #number of multiprocessing pools to use in CCDC analysis
