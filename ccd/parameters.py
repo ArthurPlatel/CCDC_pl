@@ -5,12 +5,12 @@
 
 defaults = {
 # Most important CCDC Variables
-    'parent_dir':'/Users/arthur.platel/Desktop/Fusion_Images/konza/PF-SR',
+    'parent_dir':'~/FusionImages/PF-SR/',
     'resampleResolution':30,   #if original 3m resolution required, set to 3
     'nth':5,    #use every nth image from image stack for analysis, nth=1 if every image should be used
     'pool_size':4, #number of multiprocessing pools to use in CCDC analysis
     'num_rows': 5, #number of pixel rows to process at a time
-    'MEOW_SIZE': 5, #minimum expected observation window needed to produce a fit.
+    'MEOW_SIZE': 12, #minimum expected observation window needed to produce a fit.
     'PEEK_SIZE': 7, #number of repetive observations that must surpass change threshold to detect change
     'DAY_DELTA': 365, #number of days required for a years worth of data, defined to be 365
     'AVG_DAYS_YR':365.2425,
