@@ -94,7 +94,7 @@ class CCD:
 
         #global shape of image
         self.shape=np.shape(resampled.ReadAsArray())
-        self.y_size=10
+        self.y_size=self.shape[2]
         print("Image shape {} at {} meter resolution".format(self.shape,self.sample_size))
         
         # set start/end dates of images
