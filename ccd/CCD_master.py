@@ -18,7 +18,6 @@ pix=0
 def loadImages(parent_dir,sample_size,nth=1):
     allFiles = glob.glob(os.path.join(parent_dir, '*.tif'))
     output=parent_dir+str('/CCD_Output_'+str(sample_size)+'m')
-
     #Function to only use every nth image instead of the whole stack
     files=[]
     for k in range(len(allFiles)):
@@ -293,7 +292,6 @@ def main():
     resample(images,ras_data)
     csvParameters(ras_data,size,nth,num,parent_dir,)
     tuples=rowTuples(num,ras_data,size)
-    bands=["blue","green","red","nir","ndvi","ndwi"]
     p = multiprocessing.Pool(size)
     pixelCoordinates(ras_data)
     result_map = p.map(partial(detectRows,ras_data=ras_data,images=images),tuples)
@@ -301,7 +299,7 @@ def main():
     changeArray(result_map,day1+15,day2-90,ras_data)
     days=[(day1+15),(day2-90)]
     for day in days:
-        rmse=[toArray(result_map, str(band),"rmse",day,ras_data)for band in bands]
+        rmse=[toArray(result_map, str(band),"rmse",day,ras_data)for band in dfs['ccd_bands']]
         coefficients=[toArray(result_map,str(band),"coefficients",day,ras_data,k)for k in range(3)for band in bands]
         resampleImage(allFiles,day,ras_data)
         for ras in coefficients:
