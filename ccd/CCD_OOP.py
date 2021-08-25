@@ -15,10 +15,10 @@ import pandas as pd
 
 
 def main():
-    #parent_dir=str(input("Fusion Stack Directory?"))
-    #sample_size=int(input("Resample Image Resolution Size (30m)?"))
-    parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/Konza/PF-SR'
-    sample_size=30
+    parent_dir=str(input("Fusion Stack Directory?"))
+    sample_size=int(input("Resample Image Resolution Size (30m)?"))
+    # parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/Konza/PF-SR'
+    # sample_size=30
     data=CCD(parent_dir,sample_size)
     #data.detectRows((0,5))
    
