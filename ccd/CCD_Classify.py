@@ -7,9 +7,8 @@ from Build_RFC import classify
 from datetime import date
 import numpy as np
 from pandas.core.dtypes.missing import notna
-from CCD_master import save_raster
+from CCD_OOP import save_raster
 from osgeo import gdal
-import FusionFunctions as FF
 from parameters import defaults as dfs
 import os
 from pathlib import Path

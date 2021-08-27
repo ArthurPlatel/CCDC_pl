@@ -5,7 +5,7 @@
 
 defaults = {
 # Most important CCDC Variables
-    'nth':5,    #use every nth image from image stack for analysis, nth=1 if every image should be used
+    'nth':1,    #use every nth image from image stack for analysis, nth=1 if every image should be used
     'pool_size':4, #number of multiprocessing pools to use in CCDC analysis
     'num_rows': 5, #number of pixel rows to process at a time
     'MEOW_SIZE': 12, #minimum expected observation window needed to produce a fit.
