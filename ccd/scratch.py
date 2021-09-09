@@ -3,8 +3,6 @@ import numpy as np
 import data_input as FF
 from parameters import defaults as dfs
 from datetime import date
-from CCD_master import pixelCoordinates
-from CCD_master import save_raster
 from osgeo import gdal
 
 
@@ -33,11 +31,7 @@ def pixelRaster(parent_dir,out_dir):
 #         r+=1
 
 def main():
-    # list=[1,2,3,4,5]
-    # print(list[-1])
-    # parent_dir='/Users/arthur.platel/Desktop/Fusion_Images/hospital/PF-SR'
-    # out_dir="/Users/arthur.platel/Desktop/CCDC_Output/hospital"
-    fromOrdinal(737846)
+    fromOrdinal(737654)
    
 
 if __name__ == '__main__':
