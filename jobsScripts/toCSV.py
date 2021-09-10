@@ -267,7 +267,6 @@ def main():
     ## Set Parser flags
     parser = argparse.ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
     parser.add_argument("-f",action="store", metavar="action", type=str, help="choose function ( i= init, a = addImages)")
-    #parser.add_argument("-a",action="store", metavar="action", type=str, help="add new images function")
     parser.add_argument("-d",action="store", metavar="directory", type=str, help="Directory of image stack")
     parser.add_argument("--r", action="store", metavar="value", type=int, help="Output resolution to resample image stack", default=30)
     parser.add_argument("--p", action="store", metavar="value", type=int, help="Number of pixels to process per CSV file", default=400*400)
