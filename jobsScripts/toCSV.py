@@ -1,6 +1,6 @@
 from osgeo.gdalconst import GA_ReadOnly
 from pandas.core.frame import DataFrame
-from ccd.ArgParse import ArgumentParser
+import argparse
 import glob
 import os
 from osgeo import gdal
@@ -265,7 +265,7 @@ def init(parent_dir, pixel_count,cores,sample_size):
 def main():
     ############ Command Line Variables ################
     ## Set Parser flags
-    parser = ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
+    parser = argparse.ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
     parser.add_argument("-f",action="store", metavar="action", type=str, help="choose function ( i= init, a = addImages)")
     #parser.add_argument("-a",action="store", metavar="action", type=str, help="add new images function")
     parser.add_argument("-d",action="store", metavar="directory", type=str, help="Directory of image stack")
