@@ -9,26 +9,36 @@ from ccd import detect
 from parameters2 import defaults as dfs
 import multiprocessing
 import csv
+from ArgParse import ArgumentParser
 
 def main():
-    parent_dir=str(input("Fusion Stack Directory?"))
-    sample_size=int(input("Resample Image Resolution Size (30m)?"))
-    fusion=str(input("Fusion data (Y/N)?"))
-    if fusion.upper()=='Y':
-        d='fusion'
-    else:
-        d="force"
-    data=CCD(parent_dir,sample_size,d)
+    #####Arg Parse########
+    parser = ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
+    parser.add_argument("-d",action="store", metavar="directory", type=str, help="Directory of image stack")
+    parser.add_argument("--r", action="store", metavar="value", type=int, help="Output resolution to resample image stack", default=30)
+    parser.add_argument("--c", action="store", metavar="value", type=int, help="Number of cores to use in multiprocessing", default=4)
+    parser.add_argument("-h", "--help", action="help", help="Display this message")
+    ##################
+    args = parser.parse_args()
+    sample_size=args.r
+    parent_dir=args.d
+    size=args.c
+    ##################
+    start=time.time()
+    data=CCD(parent_dir,sample_size,size,'fusion')
+    end=time.time()
+    total=end-start
+    print('Completed in {}'.format(total))
    
 
 class CCD:
-    def __init__(self, parent_dir=None, sample_size=3,d='no'):
+    def __init__(self, parent_dir=None, sample_size=3,size=4,d='fusion'):
         self.parent_dir=parent_dir#pool size
-        self.size=dfs['pool_size']
+        self.size=size
         self.num=dfs['num_rows']
         self.sample_size=sample_size
         self.nth=dfs['nth']
-        self.output=self.parent_dir+str('/CCD_Output_'+str(self.sample_size)+'m_resampled_Trial')
+        self.output=self.parent_dir+str('/CCD_Output_'+str(self.sample_size)+'m_resampled_Trialagain')
         self.days=[]
         self.shape=0
         self.proj=0
@@ -37,6 +47,8 @@ class CCD:
         self.data=d
         self.images=self.setVariables()
         self.tuples=self.rowTuples()
+        p = multiprocessing.Pool(self.size)
+        result_map = p.map(self.detectRows,self.tuples)
         
         ###############################
         ############CCD################
@@ -59,6 +71,7 @@ class CCD:
 
         # Main CCD analysis using multiprocessing
         p = multiprocessing.Pool(self.size)
+
         result_map = p.map(self.detectRows,self.tuples)
 
         #create change map
@@ -180,11 +193,11 @@ class CCD:
             rows.append(k)
 
         #create empty array to store time series data for entire image stack
-        time_series=[[[[]for r in range(8)]for y in range(self.y_size)]for x in range(numRows)]
+        time_series=[[[[]for r in range(7)]for y in range(self.y_size)]for x in range(numRows)]
         
         # Open every Fusion tif, resample to desired size and extract pixel values for each band into "time_series" array
         #returns array with all pixel values from time series
-        print("collecting pixel data from {} images for rows {} to {} using {}".format(len(self.images),r0,r1-1,str(multiprocessing.current_process())[-42:-30]))
+        print("collecting pixel data from {} images for rows {} to {} using {}".format(len(self.images),r0,r1-1,str(multiprocessing.current_process())))
         imageTime=time.time()
         for fusion_tif in self.images:
             image0=gdal.Open(fusion_tif)
@@ -206,8 +219,7 @@ class CCD:
                     time_series[l][y][3].append(red[x,y])  
                     time_series[l][y][4].append(nir[x,y])    
                     time_series[l][y][5].append(((nir[x,y]-red[x,y])/(nir[x,y]+red[x,y]))*1000)
-                    time_series[l][y][6].append(((green[x,y]-nir[x,y])/(green[x,y]+nir[x,y]))*1000)
-                    time_series[l][y][7].append(1)
+                    time_series[l][y][6].append(1)
         print("{} completed ingesting images in {}".format(str(multiprocessing.current_process())[-42:-30],time.time()-imageTime))
         return time_series,rows
 
@@ -215,7 +227,9 @@ class CCD:
         #Ingest data from Images
         time_series,rows=self.inputData(row)
         #Pass pixel array through CCD processing
+        start=time.time()
         ccdArray=[[((self.CCD_main(time_series[x][y],(rows[x],y))))for y in range(self.y_size)]for x in range(np.shape(time_series)[0])]
+        end=time.time()
         return ccdArray, rows
 
     def csvResults(self,result_map):
@@ -254,8 +268,8 @@ class CCD:
     def CCD_main(self,pixel_data,pixel_coordinates):
         now=time.time()
         data=np.array(pixel_data)
-        dates,blues,greens,reds,nirs,ndvis,ndwis,qas=data
-        result=detect(dates, greens,blues, reds, nirs, ndvis, ndwis, qas, dfs['params'])
+        dates,blues,greens,reds,nirs,ndvis,qas=data
+        result=detect(dates, blues,greens, reds, nirs, ndvis, qas, dfs['params'])
         final_time=time.time()-now
         print("processing pixel {}".format(pixel_coordinates))
         return result["change_models"]

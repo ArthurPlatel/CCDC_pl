@@ -8,7 +8,7 @@ In the interest of avoiding circular imports, this should be kept to be fairly
 stand-alone. I.e. it should not import any other piece of the overall project.
 """
 from functools import wraps
-from ccd.parameters2 import defaults as dfs
+from ccd.parameters import defaults as dfs
 import numpy as np
 from scipy.stats import mode
 

@@ -7,7 +7,7 @@ from Build_RFC import classify
 from datetime import date
 import numpy as np
 from pandas.core.dtypes.missing import notna
-from CCD_OOP import save_raster
+from CCD_Main import save_raster
 from osgeo import gdal
 from parameters import defaults as dfs
 import os
@@ -16,7 +16,7 @@ import glob
 import math
 import multiprocessing
 from functools import partial
-from ccd.CCD_master import csvParameters
+from CCD_Main import csvParameters
 
 def toDF(seq):
     pixel=pd.DataFrame({

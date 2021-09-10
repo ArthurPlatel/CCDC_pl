@@ -1,3 +1,9 @@
+##############################################
+##This Script is only used in notebooks#######
+##############################################
+
+
+
 import numpy as np
 from osgeo import gdal
 import glob, os
@@ -50,10 +56,8 @@ def get_data(parent_dir,pixel_x,pixel_y,sampleSize,nth,d='fusion'):
         nirs.append(nir)
         ndvi = ((nir-red)/(red+nir)*1000)
         ndvis.append(ndvi)
-        ndwi = ((green-nir)/(green+nir)*1000)
-        ndwis.append(ndwi)
         qas.append(qa)
-    return np.array([o_time,blues,greens,reds,nirs,ndvis,ndwis,qas])
+    return np.array([o_time,blues,greens,reds,nirs,ndvis,qas])
 
 
 

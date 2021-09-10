@@ -121,7 +121,7 @@ def __check_inputs(dates, quality, spectra):
 #def detect(dates, blues, greens, reds, nirs,
 #        ndvis, qas, params=None):
 def detect(dates,blues,greens, reds, nirs,
-        ndvis, ndwis, qas, params=None):
+        ndvis, qas, params=None):
     """Entry point call to detect change
 
     No filtering up-front as different procedures may do things
@@ -134,7 +134,6 @@ def detect(dates,blues,greens, reds, nirs,
         reds:     1d-array or list of red band values
         nirs:     1d-array or list of nir band values
         ndvi :    1d-array or list of ndvi band values
-        ndwi :    1d-array or list of ndwi band values
         qas:  1d-array or list of qa band values
         params: python dictionary to change module wide processing
             parameters
@@ -152,7 +151,7 @@ def detect(dates,blues,greens, reds, nirs,
     dates = np.asarray(dates)
     qas = np.asarray(qas)
 
-    spectra = np.stack((blues,greens,reds,nirs,ndvis,ndwis))
+    spectra = np.stack((blues,greens,reds,nirs,ndvis))
 
     __check_inputs(dates, qas, spectra)
 

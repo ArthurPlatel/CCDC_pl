@@ -18,8 +18,8 @@ def readResults(csv_dir):
     for csvFile in allFiles:
         with open(csvFile) as csv:
             read=pd.read_csv(csv, delimiter=',',header=None,names=list(range(5))).dropna(axis='columns',how='all')
-            for k in range
-            print(eval(read[0][0]).count(737897))
+            for k in range(5):
+                print(eval(read[0][0]).count(737897))
     #         try:
     #              read[2]
     #              print('yesdfgadfgdgsdgdgdgfdgdgdfgsdfgdgsdgdgd')
