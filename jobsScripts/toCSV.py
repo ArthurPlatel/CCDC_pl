@@ -15,29 +15,6 @@ import pandas as pd
 
 
 
-# def addConstruct(images,shape,sample_size,output,proj,geo,pixels):
-#     dates=[]
-#     for file in images:
-#         dates.append(date(int(file[-14:-10]), int(file[-9:-7]), int(file[-6:-4])).toordinal()) 
-#     bands,rows,columns=shape
-#     p0,p1,n=pixels
-#     num=0
-#     #create image data csv
-#     for image in images:
-#         print("processing image {}".format(num))
-#         num+=1
-#         start=time.time()
-#         if sample_size!=3:
-#             resampled=gdal.Warp('/vsimem/in_memory_output.tif',file,xRes=sample_size,yRes=sample_size,resampleAlg=gdal.GRA_Average)
-#             tile=resampled
-#         else:
-#             tile=gdal.Open(file)
-#         values=flatten=[tile.GetRasterBand(k+1).ReadAsArray().flatten()[p0:p1]for k in range(bands)]
-#         write_CSV(values,shape,sample_size,output,pixels)
-#         end=time.time()-start
-#         print('processed in {}'.format(end))
-
-
 
 
 #### Creates empty CSV files based based on user selected pixel_count
@@ -50,7 +27,7 @@ def create_CSV(shape,sample_size,output,pixels):
     fields=['pixel','blue','green','red','nir','ndvi']
     bands,rows,cols=shape
     print("creating CSV {}".format(n))
-    #### create empty lists for each pixel to later append
+    #### create empty lists for each pixel to append later
     data=[[[]for k in range(6)]for pix in range(pixel_count)]
 
     #add pixel coordinates
@@ -76,7 +53,7 @@ def write_CSV(values,shape,sample_size,output,pixels):
     csv=glob.glob(os.path.join(output,name))
     data=pd.read_csv(csv[0],header=0,names=fields)
 
-    # put CSV data into DataFramef
+    # put CSV data into DataFrame
     df=pd.DataFrame(data)
     new=[[eval(df[k][pix])for k in fields[1:]]for pix in range(len(df))]
 
@@ -96,7 +73,7 @@ def write_CSV(values,shape,sample_size,output,pixels):
     df2.to_csv(str(output)+'/'+str(n)+'_'+str(sample_size)+'m.csv',header=fields)
 
    
-#divide total pixels into smaller subets
+#divide total pixels into smaller subsets
 def pixelsPool(shape,pixel_count):
     bands,rows,cols=shape
     tot_pix=rows*cols
@@ -226,6 +203,8 @@ def addImages(parent_dir,cores):
         writer.writerow([str(geo),int(pixel_count),tuple(shape),str(proj),newDates])
         pixels=pixelsPool(shape,pixel_count)
         p = multiprocessing.Pool(cores)
+
+    ## write new 
         p.map(partial(construct,newFiles,shape,sample_size,output,proj,geo),pixels)
         print("Added {} images".format(numAdded))
 
