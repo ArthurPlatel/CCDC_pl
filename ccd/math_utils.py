@@ -37,7 +37,6 @@ def adjusted_variogram(dates, observations):
 
     for idx in range(dates.shape[0]):
         var = dates[1 + idx:] - dates[:-idx - 1]
-
         majority = mode(var)[0][0]
         #create adusted variogram vairable based on original Landsat algorithim
         variable=dfs['vari']/dfs['nth']

@@ -5,9 +5,6 @@
 
 defaults = {
 # Most important CCDC Variables
-    'parent_dir':'/home/arthur.platel/FusionImages/PF-SR',
-    'resampleResolution':30,   #if original 3m resolution required, set to 3
-    'nth':1,    #use every nth image from image stack for analysis, nth=1 if every image should be used
     'pool_size':4, #number of multiprocessing pools to use in CCDC analysis
     'num_rows': 5, #number of pixel rows to process at a time
     'MEOW_SIZE': 12, #minimum expected observation window needed to produce a fit.
@@ -17,7 +14,7 @@ defaults = {
     'OUTLIER_THRESHOLD':25,
     'CHANGE_THRESHOLD':15,
     'T_CONST': 4.89,  
-    #assuming there is imagery every day, vari =480/dfs['nth']                                                                        
+    #assuming there is imagery every day, vari =480/ 1(img/day)                                                                       
     'vari':300,
 
     ############################

@@ -23,55 +23,54 @@ def create_CSV(shape,sample_size,output,pixels):
     
     ######Variables######
     p0,p1,n=pixels
-    pixel_count=p1-p0
-    fields=['pixel','blue','green','red','nir','ndvi']
-    bands,rows,cols=shape
     print("creating CSV {}".format(n))
-    #### create empty lists for each pixel to append later
-    data=[[[]for k in range(6)]for pix in range(pixel_count)]
-
-    #add pixel coordinates
-    for pix in range(pixel_count):
-        data[pix][0].append(((pix+p0)//cols,(pix+p0)%cols))
-    
-    #store empty lists as DataFrame and write to CSV
-    df=pd.DataFrame(data)
-    df.to_csv(str(output)+'/'+str(n)+'_'+str(sample_size)+'m.csv',header=fields)
+    #### create empty csv files and write header
+    fields=['date','shape','sample_size','pixels','blues','greens','reds','nirs']
+    with open(str(output)+'/'+str(n)+'_'+str(sample_size)+'m.csv','w') as f:
+        writer=csv.writer(f)
+        writer.writerow(fields)
+        
 
 ####Adds new image pixel values to previous time series###
 ####and overwrites CSV file with new data################
 
-def write_CSV(values,shape,sample_size,output,pixels):
+#####function that takes image pixel values and prints them in CSVs
+def toCSV(imageStack,shape,num,sample_size,output,bands,pixels):
+        p0,p1,n=pixels
+        for file in imageStack:
+            print("processing image {}".format(num))
+            num+=1
+            start=time.time()
+
+            #get image date
+            day=date(int(file[-14:-10]), int(file[-9:-7]), int(file[-6:-4])).toordinal()
+
+            ### determine image resolution
+            if sample_size!=3:
+                resampled=gdal.Warp('/vsimem/in_memory_output.tif',file,xRes=sample_size,yRes=sample_size,resampleAlg=gdal.GRA_Average)
+                tile=resampled
+            else:
+                tile=gdal.Open(file)
+
+
+            #flatten image array for easier data extraction
+            values=[(tile.GetRasterBand(k+1).ReadAsArray().flatten()).tolist()[p0:p1]for k in range(bands)]
+
+            #append pixel values to CSV
+            write_CSV(values,day,shape,sample_size,output,pixels)
+            end=time.time()-start
+            print('processed in {}'.format(end))
+
+
+
+### writes a list of image values as CSV row
+def write_CSV(values,date,shape,sample_size,output,pixels):
     ##Variables
-    bands,rows,cols=shape
     p0,p1,n=pixels
-    pixel_count=p1-p0
-    name=str(n)+'_'+str(sample_size)+'m.csv'
-    fields=['pixel','blue','green','red','nir','ndvi']
-    
-    ## Read CSV to overwrite
-    csv=glob.glob(os.path.join(output,name))
-    data=pd.read_csv(csv[0],header=0,names=fields)
-
-    # put CSV data into DataFrame
-    df=pd.DataFrame(data)
-    new=[[eval(df[k][pix])for k in fields[1:]]for pix in range(len(df))]
-
-
-    #insert pixel coordinates
-    for pix in range(pixel_count):
-        new[pix].insert(0,((pix+p0)//cols,(pix+p0)%cols))
-    
-    #append new pixel data to band lists
-    for pix in range(len(new)):
-        for k in range(len(values)):
-            new[pix][k+1].append(values[k][pix])
-        new[pix][5].append(int(((((values[3][pix])-(values[2][pix]))/((values[3][pix])+(values[2][pix]))) *1000)))
-    
-    #overwrite previous csv with new data
-    df2=pd.DataFrame(new)
-    df2.to_csv(str(output)+'/'+str(n)+'_'+str(sample_size)+'m.csv',header=fields)
-
+    name=output+'/'+str(n)+'_'+str(sample_size)+'m.csv'
+    with open(name,mode='a') as f:
+        writer=csv.writer(f)
+        writer.writerow([date,shape,sample_size,pixels,values[0],values[1],values[2],values[3]])
    
 #divide total pixels into smaller subsets
 def pixelsPool(shape,pixel_count):
@@ -106,7 +105,7 @@ def getInfo(allFiles,sample_size):
 def construct(images,shape,sample_size,output,proj,geo,pixels):
     
     ###variables
-    bands,rows,columns=shape
+    bands,rows,cols=shape
     p0,p1,n=pixels
     num=0
 
@@ -118,31 +117,11 @@ def construct(images,shape,sample_size,output,proj,geo,pixels):
 
     with open(str(output)+'/imageData.csv','w') as dates_file:  
         writer = csv.writer(dates_file)
-        writer.writerow([geo,p1-p0,shape,proj,dates])
+        writer.writerow([geo,p1-p0,shape,proj])
 
     ##Open each image in directory and 
-    for file in images:
-        print("processing image {}".format(num))
-        num+=1
-        start=time.time()
-
-        ### determine image resolution
-        if sample_size!=3:
-            resampled=gdal.Warp('/vsimem/in_memory_output.tif',file,xRes=sample_size,yRes=sample_size,resampleAlg=gdal.GRA_Average)
-            tile=resampled
-        else:
-            tile=gdal.Open(file)
-
-        #flatten image array for easier data extraction
-        values=[tile.GetRasterBand(k+1).ReadAsArray().flatten()[p0:p1]for k in range(bands)]
-        
-        #append pixel values to CSV
-        write_CSV(values,shape,sample_size,output,pixels)
-
-        end=time.time()-start
-        print('processed in {}'.format(end))
-
-
+    toCSV(images,shape,num,sample_size,output,bands,pixels)
+    
 #####################################
 #####################################
 
@@ -156,59 +135,51 @@ def addImages(parent_dir,cores):
     output=str(parent_dir)+'/pixelValues'
     
     #Find imageData CSV and all fusion tiles
-    imageData= glob.glob(os.path.join(output,'*imageData.csv'))
+    allCSV = glob.glob(os.path.join(output,'*m.csv'))
     allFiles = glob.glob(os.path.join(parent_dir, '*.tif'))
     #sort images chronologically 
     sortedFiles=sorted(allFiles)
-    
-
+    #################
+    allDates=[0]
+    addDates=[]
     #collect all image dates in list
-    datesNow=[]
     for file in sortedFiles:
-        datesNow.append(date(int(file[-14:-10]), int(file[-9:-7]), int(file[-6:-4])).toordinal()) 
-    
+        allDates.append(date(int(file[-14:-10]), int(file[-9:-7]), int(file[-6:-4])).toordinal()) 
     ##collect variables from CSV
-    with open(imageData[0]) as csvFile:
-        read=pd.read_csv(csvFile, delimiter=',',header=None,names=list(range(5))).dropna(axis='columns',how='all')
-        ###Variables From CSV###
-        geo=eval(read[0][0])
-        sample_size=int(geo[1])
-        pixel_count=int(read[1][0])
-        shape=eval(read[2][0])
-        proj=read[3][0]
-        datesBefore=eval(read[4][0])
-        #######################
-        
-        #empty lists to store new image info
-        newFiles=[]
-        newDates=[]
-        numAdded=0
-        
-        #determine which images are new
-        for day in datesNow:
-            if datesBefore.count(day)==0 and day > newDates[-1]:
-                file=str(date.fromordinal(day))+'*.tif'
-                image= glob.glob(os.path.join(parent_dir,file))
-                #store new image file name and dates in new lists
-                newFiles.append(image[0])
-                newDates.append(day)
-                print("adding tif: {}".format(image[0]))
-                numAdded+=1
-            else:
-                newDates.append(day)
+    data=pd.read_csv(allCSV[0])
+    sample_size=int(data['sample_size'][0])
+    oldDates=data['date'].tolist()
+    shape=eval(data['shape'][0])
+    pixel=eval(data['pixels'][0])
+    bands,rows,cols=shape
+    pixel_count=pixel[1]-pixel[0]
+
+    #determine how many CSVs to write to
+    pixels=pixelsPool(shape,pixel_count)
     
-    ##replace imageData with updated date lists
-    with open(imageData[0], 'w') as csvFile:
-        writer=csv.writer(csvFile)
-        writer.writerow([str(geo),int(pixel_count),tuple(shape),str(proj),newDates])
-        pixels=pixelsPool(shape,pixel_count)
-        p = multiprocessing.Pool(cores)
+    #determine which dates are new 
+    for day in allDates:
+        if oldDates.count(day)==0 and day>oldDates[-1] :
+            dat=date.fromordinal(day)
+            file = glob.glob(os.path.join(parent_dir, str(dat)+'*.tif'))
+            addDates.append(file[0])
+    num=0
+   
+    #add dates images not already processed to csv
+    p = multiprocessing.Pool(cores)
+    print(addDates)
+    p.map(partial(toCSV,addDates,shape,num,sample_size,output,bands),pixels)
+    
+            
 
-    ## write new 
-        p.map(partial(construct,newFiles,shape,sample_size,output,proj,geo),pixels)
-        print("Added {} images".format(numAdded))
-
-
+        
+    #######################``
+    
+    #empty lists to store new image info
+    newFiles=[]
+    newDates=[]
+    numAdded=0
+    
    ####Init Function#######
    ########################
    ## creates pixesl time series data
