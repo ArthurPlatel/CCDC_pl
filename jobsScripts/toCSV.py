@@ -89,7 +89,8 @@ def write_CSV(values,shape,sample_size,output,pixels):
     for pix in range(len(new)):
         for k in range(len(values)):
             new[pix][k+1].append(values[k][pix])
-        new[pix][5].append(int(((((values[3][pix])-(values[2][pix]))/((values[3][pix])+(values[2][pix]))) *1000)))
+        ndvi = ((((values[3][pix])-(values[2][pix]))/((values[3][pix])+(values[2][pix])))*1000)
+        new[pix][5].append(int(ndvi))
     
     #overwrite previous csv with new data
     df2=pd.DataFrame(new)
