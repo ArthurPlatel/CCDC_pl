@@ -5,8 +5,6 @@
 
 defaults = {
 # Most important CCDC Variables
-    'parent_dir':'/home/arthur.platel/FusionImages/PF-SR',
-    'resampleResolution':30,   #if original 3m resolution required, set to 3
     'nth':1,    #use every nth image from image stack for analysis, nth=1 if every image should be used
     'pool_size':4, #number of multiprocessing pools to use in CCDC analysis
     'num_rows': 5, #number of pixel rows to process at a time
@@ -39,15 +37,13 @@ defaults = {
 
     'CCD_bands':["blue","green","red","nir","ndvi","ndwi"],
 
-
+#######not in use as of now########
+######### will update when continue classification######
     ##############################
    # Classification Settings
    ##############################
      # shp file containing training data for classification
-    'trainingData':'/Users/arthur.platel/Desktop/Fusion_Images/deforestationV2/PF-SR/CCD_Output3m_working/Training/AllDeforestation.shp',
     #csv file to create training raster
-    'CCD_output_CSVfile':'/Users/arthur.platel/Desktop/Fusion_Images/hospital/PF-SR/CCD_Output10m_resampled/CCD_resultsDict.csv',
-    'className':'DeforestationClass', # output classification raster name
     'n_estimators':1000,
     'oob_score':True,
 
