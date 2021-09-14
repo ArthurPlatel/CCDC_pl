@@ -16,7 +16,7 @@ def main():
     args = parser.parse_args()
     
     #variables
-    parent_dir='/Users/arthur.platel/Desktop/PF-SR'
+    parent_dir=args.d
     csv_dir= str(parent_dir)+'/pixelValues'
     files = glob.glob(os.path.join(csv_dir, '*m.csv'))
     imageData=glob.glob(os.path.join(csv_dir, 'imageData*.csv'))[0]
