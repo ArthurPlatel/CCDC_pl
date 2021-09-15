@@ -1,73 +1,69 @@
 import pandas as pd
 import csv
+from ccd.parameters import defaults as dfs
 import os
 import glob
-from datetime import date
-import argparse
 from ccd import detect
-import time
-from ccd.parameters import defaults as dfs
 import json
+import argparse
+import time
 
-def readCSV(csvFile):
+def main():
     
-    #Load all CSV files
-    allFiles = glob.glob(os.path.join(csvFile,'*m.csv'))
-    ordered=sorted(allFiles)
-    data=pd.read_csv(ordered[0])
-    pixels=eval(data['pixels'][0])
-    shape=eval(data['shape'][0])
-    sample_size=(data['sample_size'])
-    bands,rows,cols=shape
-    p0,p1,num=pixels
-    pixel_count=p1-p0
-    with open(str(csvFile)+'/'+str(num)+'_Results.json', 'w') as outfile:
+    ###Argparse settings
+    parser = argparse.ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
+    parser.add_argument("-d",action="store", metavar="directory", type=str, help="Directory of image stack")
+    args = parser.parse_args()
+    
+    #variables
+    parent_dir=args.d
+    csv_dir= str(parent_dir)+'/pixelValues'
+    files = glob.glob(os.path.join(csv_dir, '*m.csv'))
+    imageData=glob.glob(os.path.join(csv_dir, 'imageData*.csv'))[0]
+    
+    #run code on each data CSV file in directory/can change to single file
+    #for file in files:
+    readResults(files[0], imageData,csv_dir)
+
+def readResults(file, imageData,csv_dir):
+
+    #read csv file and imageData CSV
+    df=pd.read_csv(file,header=0)
+    df2=pd.read_csv(imageData, header=None)
+   
+    ####Variables######
+    pixel_count=int(df2[1][0])
+    shape=eval(df2[2][0])
+    dates =eval(df2[4][0])
+    params=dfs['params']
+    qas=[1]*len(dates)
+    pixel1=eval(df['pixel'][0])
+    num=(((pixel1[0]*shape[1])+pixel1[1]))//pixel_count
+    
+    #determine CSV number to write
+    with open(str(csv_dir)+'/'+str(num)+'_Results.json', 'w') as outfile:
             json.dump([],outfile)
-    #add pixel coordinate`s
+    
+    ####Calculate CCD for each pixel
+    print("calulating CCD Results")
     for pix in range(pixel_count):
         start=time.time()
-        pixelData=[[]for k in range(7)]
-        for k in range(len(data)):
-            nir=eval(data['nirs'][k])[pix]
-            red=eval(data['reds'][k])[pix]
-            ndvi=(int((nir-red)/(nir+red)*1000))
-            pixelData[0].append(data['date'][k])
-            pixelData[1].append(eval(data['blues'][k])[pix])
-            pixelData[2].append(eval(data['greens'][k])[pix])
-            pixelData[3].append(red)
-            pixelData[4].append(nir)
-            pixelData[5].append(ndvi)
-            pixelData[6].append(1)
-        dates, blues, greens, reds, nirs, ndvis, qas = pixelData
-        results = detect(dates, blues, greens, reds, nirs, ndvis, qas,dfs['params'])
-        end=time.time()-start
-        pixel=tuple(((pix+p0)//cols,(pix+p0)%cols))
+        pixel=eval(df['pixel'][pix])
+        data =[[eval(df[band][pix])]for band in df.keys()[2:7]]
+        blues,greens,reds,nirs,ndvis=data
+        results=detect(dates,blues[0],greens[0],reds[0],nirs[0],ndvis[0],qas,params)
+        ##write results to json
         ccdResults={str(pixel):results}
-        with open(str(csvFile)+'/'+str(num)+'_Results.json', 'r') as outfile:
+        with open(str(csv_dir)+'/'+str(num)+'_Results.json', 'r') as outfile:
             dat=json.load(outfile) 
             dat.append(ccdResults)
-        with open(str(csvFile)+'/'+str(num)+'_Results.json', "w") as file:
+        with open(str(csv_dir)+'/'+str(num)+'_Results.json', "w") as file:
             json.dump(dat, file)
-        
-        print("processed pixel {} in {}".format(pixel,end))
-        
-        
-
-        
-   
-def main():
-    parser = argparse.ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
-    parser.add_argument("-f",action="store", metavar="action", type=str, help="choose function ( i= init, a = addImages)")
-    args = parser.parse_args()
-    csv_dir=args.f
-    allFiles = glob.glob(os.path.join(csv_dir, '*m.csv'))
-    csvFile=allFiles[0]
-    readCSV(csv_dir)
-
+        end=time.time()-start
+        print('processed pixel {} in {}'.format(pixel,end))
 
 
 if __name__ == '__main__':
     main()
 
-   
-   
+    #do everything

@@ -1,5 +1,5 @@
+from genericpath import isdir
 from osgeo.gdalconst import GA_ReadOnly
-from pandas.core.frame import DataFrame
 import argparse
 import glob
 import os
@@ -7,231 +7,180 @@ from osgeo import gdal
 import numpy as np
 import time
 from datetime import date
-import csv
+from csv import writer
 import multiprocessing
 from functools import partial
-import pandas as pd
+import json
 
 
 
+## will resample a single tif file and save result as tmp file
+def resample_image_to_tmp(image_resolution, tif_file_name):
+    new_temp_file_name ='/tmp/' + str(image_resolution) + 'm_' + str(os.path.basename(tif_file_name))
+    if os.path.isfile(new_temp_file_name):
+        os.remove(new_temp_file_name)
+    print('resampling {}'.format(new_temp_file_name))
+    gdal.Warp(
+            new_temp_file_name,
+            tif_file_name, xRes=image_resolution,
+            yRes=image_resolution,
+            resampleAlg=gdal.GRA_Average
+            )
 
-
-
-#### Creates empty CSV files based based on user selected pixel_count
-
-def create_CSV(shape,sample_size,output,pixels):
+# resamples an entire image stack and saves result in tmp folder
+def resample_image_stack_to_tmp(image_resolution,sorted_image_stack_files):
     
-    ######Variables######
-    p0,p1,n=pixels
-    print("creating CSV {}".format(n))
-    #### create empty csv files and write header
-    fields=['date','shape','sample_size','pixels','blues','greens','reds','nirs']
-    with open(str(output)+'/'+str(n)+'_'+str(sample_size)+'m.csv','w') as f:
-        writer=csv.writer(f)
-        writer.writerow(fields)
+    #create list of temp resampled image names
+    list_of_resampled_image_names =  [
+        '/tmp/' + str(image_resolution) 
+        + 'm_' + str(os.path.basename(tif_file_name)) 
+        for tif_file_name in sorted_image_stack_files
+        ]
+
+    # resample images using multiprocessing with 4 cores
+    p=multiprocessing.Pool(4)
+    if image_resolution != 3:
+        p.map(partial(resample_image_to_tmp, image_resolution), sorted_image_stack_files)
         
-
-####Adds new image pixel values to previous time series###
-####and overwrites CSV file with new data################
-
-#####function that takes image pixel values and prints them in CSVs
-def toCSV(imageStack,shape,num,sample_size,output,bands,pixels):
-        p0,p1,n=pixels
-        for file in imageStack:
-            print("processing image {}".format(num))
-            num+=1
-            start=time.time()
-
-            #get image date
-            day=date(int(file[-14:-10]), int(file[-9:-7]), int(file[-6:-4])).toordinal()
-
-            ### determine image resolution
-            if sample_size!=3:
-                resampled=gdal.Warp('/vsimem/in_memory_output.tif',file,xRes=sample_size,yRes=sample_size,resampleAlg=gdal.GRA_Average)
-                tile=resampled
-            else:
-                tile=gdal.Open(file)
+    #return resampled image file names + path  
+    return list_of_resampled_image_names
 
 
-            #flatten image array for easier data extraction
-            values=[(tile.GetRasterBand(k+1).ReadAsArray().flatten()).tolist()[p0:p1]for k in range(bands)]
+def write_metadata_to_json(image_shape,geo,proj,image_resolution, num_rows_per_csv,init_output_csv_dir):
+        #write to json file
+    image_metadata_dict = {
+            "image_shape": image_shape,
+            "geo": geo,
+            "proj": proj,
+            "image_resolution": image_resolution,
+            "num_rows_per_csv": num_rows_per_csv
+            }
+        #write metadata to json file
+    image_metadata_file = open(init_output_csv_dir + "/image_metadata.json", "w")
+    image_metadata_file.write(json.dumps(image_metadata_dict))
+    image_metadata_file .close()
 
-            #append pixel values to CSV
-            write_CSV(values,day,shape,sample_size,output,pixels)
-            end=time.time()-start
-            print('processed in {}'.format(end))
 
+def get_image_stack_metadata(resampled_image_file_names ):
 
-
-### writes a list of image values as CSV row
-def write_CSV(values,date,shape,sample_size,output,pixels):
-    ##Variables
-    p0,p1,n=pixels
-    name=output+'/'+str(n)+'_'+str(sample_size)+'m.csv'
-    with open(name,mode='a') as f:
-        writer=csv.writer(f)
-        writer.writerow([date,shape,sample_size,pixels,values[0],values[1],values[2],values[3]])
-   
-#divide total pixels into smaller subsets
-def pixelsPool(shape,pixel_count):
-    bands,rows,cols=shape
-    tot_pix=rows*cols
-    tuples=[]
-    jobs=tot_pix//pixel_count
-    remain=tot_pix%pixel_count
-    for k in range(jobs):
-        tuples.append((pixel_count*k,pixel_count*(k+1),k))
-    if remain > 0:
-        tuples.append(((pixel_count*(jobs)),(pixel_count*(jobs)+remain),(jobs+1)))
-    return tuples     
-
-#load image parameters
-def getInfo(allFiles,sample_size):
-    #open a single image file to extract values
-    file=allFiles[0]
     #resample image to requested resoultion
-    if sample_size!=3:
-        resampled=gdal.Warp('/vsimem/in_memory_output.tif',file,xRes=sample_size,yRes=sample_size,resampleAlg=gdal.GRA_Average)
-        image=resampled
-    else:
-        image=gdal.Open(file)
+    first_image_ds = gdal.Open(resampled_image_file_names[0])
+    
     #output variables
-    shape=np.shape(image.ReadAsArray())
-    proj=image.GetProjection()
-    geo=image.GetGeoTransform()
-    return shape,proj,geo
-
-    ##### Main function to collect image data and write/append to CSV
-def construct(images,shape,sample_size,output,proj,geo,pixels):
+    image_shape = np.shape(first_image_ds.ReadAsArray())
+    proj=first_image_ds.GetProjection()
+    geo=first_image_ds.GetGeoTransform()
     
-    ###variables
-    bands,rows,cols=shape
-    p0,p1,n=pixels
-    num=0
+    return image_shape,proj,geo
 
-    ##record dates of images in directory
-    dates=[]
-    for file in images:
-        dates.append(date(int(file[-14:-10]), int(file[-9:-7]), int(file[-6:-4])).toordinal()) 
-    #create CSV file with image metadata
+#determine number of csv files to create from num_rows_per_csv
+def rows_to_csv_calc(image_shape, num_rows_per_csv):
+    _, _, cols = image_shape
+    return [
+        (i,i + num_rows_per_csv)
+        if i + num_rows_per_csv <= cols else (i,cols) 
+        for i in range(0, cols, num_rows_per_csv)
+        ]
 
-    with open(str(output)+'/imageData.csv','w') as dates_file:  
-        writer = csv.writer(dates_file)
-        writer.writerow([geo,p1-p0,shape,proj])
+def write_pixel_timeseries_data_to_csv_by_row(resampled_image_file_names,  init_output_csv_dir, image_resolution, pixel_rows_to_write):
+        start_row, end_row = pixel_rows_to_write
+        num=0
+        for resampled_image_file_name in resampled_image_file_names:
+            print('writing image {} data to CSV'.format(num))
+            num+=1
+            for k in range(1,5):
+                with open(
+                    init_output_csv_dir + '/b' + str(k) 
+                    + '_' + str(image_resolution) + 'm_rows_' 
+                    + str(start_row).zfill(4) + '_to_' + str(end_row).zfill(4) 
+                    + '.csv', 'a+'
+                    ) as out_csv:
 
-    ##Open each image in directory and 
-    toCSV(images,shape,num,sample_size,output,bands,pixels)
+                    tif_dataset = gdal.Open(resampled_image_file_name)
+                    band_dataset = np.array(tif_dataset.GetRasterBand(k).ReadAsArray()[start_row:end_row].flatten())
+                    print(len(band_dataset))
+                    writer_object = writer(out_csv)
+                    writer_object.writerow(band_dataset)
+                
+                
     
-#####################################
-#####################################
-
-   ####Add Image Function#######
-   #############################
-   ##Search through directory for new 
-   ##images adds their values to CSV files
-
-def addImages(parent_dir,cores):
-    #Location of csv files
-    output=str(parent_dir)+'/pixelValues'
-    
-    #Find imageData CSV and all fusion tiles
-    allCSV = glob.glob(os.path.join(output,'*m.csv'))
-    allFiles = glob.glob(os.path.join(parent_dir, '*.tif'))
-    #sort images chronologically 
-    sortedFiles=sorted(allFiles)
-    #################
-    allDates=[0]
-    addDates=[]
-    #collect all image dates in list
-    for file in sortedFiles:
-        allDates.append(date(int(file[-14:-10]), int(file[-9:-7]), int(file[-6:-4])).toordinal()) 
-    ##collect variables from CSV
-    data=pd.read_csv(allCSV[0])
-    sample_size=int(data['sample_size'][0])
-    oldDates=data['date'].tolist()
-    shape=eval(data['shape'][0])
-    pixel=eval(data['pixels'][0])
-    bands,rows,cols=shape
-    pixel_count=pixel[1]-pixel[0]
-
-    #determine how many CSVs to write to
-    pixels=pixelsPool(shape,pixel_count)
-    
-    #determine which dates are new 
-    for day in allDates:
-        if oldDates.count(day)==0 and day>oldDates[-1] :
-            dat=date.fromordinal(day)
-            file = glob.glob(os.path.join(parent_dir, str(dat)+'*.tif'))
-            addDates.append(file[0])
-    num=0
-   
-    #add dates images not already processed to csv
-    p = multiprocessing.Pool(cores)
-    print(addDates)
-    p.map(partial(toCSV,addDates,shape,num,sample_size,output,bands),pixels)
-    
-            
-
         
-    #######################``
-    
-    #empty lists to store new image info
-    newFiles=[]
-    newDates=[]
-    numAdded=0
-    
-   ####Init Function#######
-   ########################
-   ## creates pixesl time series data
-   ## and stores values in CSV files 
 
-def init(parent_dir, pixel_count,cores,sample_size):
+
+
+
+def init(image_stack_dir, init_output_csv_dir, num_rows_per_csv, cores, image_resolution):
+    
     
     #load and sort files from directory
-    allFiles = glob.glob(os.path.join(parent_dir, '*.tif'))
-    sortedFiles=sorted(allFiles)
+    image_stack_files = glob.glob(os.path.join(image_stack_dir, '*.tif'))
+    sorted_image_stack_files = sorted(image_stack_files)
 
-    #create csv output folder
-    output=str(parent_dir)+'/pixelValues'
-    if not os.path.isdir(output):
-        os.mkdir(output)
-
-    #get fusion tile parameters
-    shape,proj,geo=getInfo(sortedFiles,sample_size)
+    #resample images to desired resolution and save temp files in new temp directory
+    resampled_image_file_names = resample_image_stack_to_tmp(image_resolution, sorted_image_stack_files)
     
-    #divide total pixels into smaller subets 
-    pixels=pixelsPool(shape,pixel_count)
+    #create output CSV folder
     
-    # initiate multiprocessing
-    p = multiprocessing.Pool(cores)
+    if not os.path.isdir(init_output_csv_dir):
+        os.mkdir(init_output_csv_dir)
 
-    #create blank csv files to be written later
-    p.map(partial(create_CSV,shape,sample_size,output),pixels)
+    #collect metadata
+    image_shape, proj, geo = get_image_stack_metadata(resampled_image_file_names)
+    
+    #write metadata to json file
+    write_metadata_to_json(image_shape,geo,proj,image_resolution, num_rows_per_csv,init_output_csv_dir)
 
-    # write and append all pixel data to CSV files
-    p.map(partial(construct,sortedFiles,shape,sample_size,output,proj,geo),pixels)
+    #determine number of csv files to create from num_rows_per_csv
+    pixel_rows_to_write = rows_to_csv_calc(image_shape, num_rows_per_csv)
+
+    write_pixel_timeseries_data_to_csv_by_row(resampled_image_file_names,  init_output_csv_dir, image_resolution, pixel_rows_to_write[2])
+
+    # read_and_write_images_to_csv()
+    # ReadImage
+    
+
+    
+    # image = gdal.Open('/tmp/CCD_resampled_tif_files/30m_2017-07-11.tif')
+    # blue_array=np.array(image.GetRasterBand(1).ReadAsArray())
+    # print(blue_array[0][0])
+    # print(np.array('/tmp/' + str(image_resolution) + 
+    #         'm_' + str(os.path.basename(sorted_image_stack_files[0])).GetRasterBand(1).ReadAsArray().flatten()))#     #get fusion tile parameters
+#     shape,proj,geo = get_image_metadata(sorted_image_stack_files,resolution)
+    
+#     #divide total pixels into smaller subets 
+#     pixels=pixelsPool(shape,)
+    
+#     # initiate multiprocessing
+#     p = multiprocessing.Pool(cores)
+
+#     #create blank csv files to be written later
+#     p.map(partial(create_CSV,shape,sample_size,output),pixels)
+
+#     # write and append all pixel data to CSV files
+#     p.map(partial(construct,sortedFiles,shape,sample_size,output,proj,geo),pixels)
     
 
 def main():
-    ############ Command Line Variables ################
-    ## Set Parser flags
-    parser = argparse.ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
-    parser.add_argument("-f",action="store", metavar="action", type=str, help="choose function ( i= init, a = addImages)")
-    parser.add_argument("-d",action="store", metavar="directory", type=str, help="Directory of image stack")
-    parser.add_argument("--r", action="store", metavar="value", type=int, help="Output resolution to resample image stack", default=30)
-    parser.add_argument("--p", action="store", metavar="value", type=int, help="Number of pixels to process per CSV file", default=400*400)
-    parser.add_argument("--c", action="store", metavar="value", type=int, help="Number of cores to use in multiprocessing", default=4)
-    parser.add_argument("-h", "--help", action="help", help="Display this message")
-    args = parser.parse_args()
-    ## Get Variables
-    parent_dir=args.d
-    sample_size=args.r
-    pixel_count=args.p
-    cores=args.c
-    if args.f.upper()=='I':
-        init(parent_dir,pixel_count,cores,sample_size)
-    if args.f.upper()=='A':
-        addImages(parent_dir,cores)
+    # ############ Command Line Variables ################
+    # ## Set Parser flags
+    # parser = argparse.ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
+    # parser.add_argument("-f",action="store", metavar="action", type=str, help="choose function ( i= init, a = addImages)")
+    # parser.add_argument("-d",action="store", metavar="directory", type=str, help="Directory of image stack")
+    # parser.add_argument("--r", action="store", metavar="value", type=int, help="Output resolution to resample image stack", default=30)
+    # parser.add_argument("--p", action="store", metavar="value", type=int, help="Number of pixels to process per CSV file", default=400*400)
+    # parser.add_argument("--c", action="store", metavar="value", type=int, help="Number of cores to use in multiprocessing", default=4)
+    # parser.add_argument("-h", "--help", action="help", help="Display this message")
+    # args = parser.parse_args()
+    # ## Get Variables
+    # parent_dir=args.d
+    # sample_size=args.r
+    # pixel_count=args.p
+    # cores=args.c
+    image_stack_dir='/Users/arthur.platel/Desktop/PF-SR'
+    
+    init_output_csv_dir = str(image_stack_dir) + '/pixel_values'
+    
+    init(image_stack_dir,init_output_csv_dir, 100,4,30)
 
 
 
