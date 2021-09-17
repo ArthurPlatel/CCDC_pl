@@ -1,18 +1,16 @@
-from genericpath import isdir
-from osgeo.gdalconst import GA_ReadOnly
-import argparse
-import glob
 import os
 import sys
-from osgeo import gdal
+import csv
+import glob
+import json
+import fnmatch
+import argparse
 import numpy as np
 from csv import writer
-import csv
+from osgeo import gdal
 import multiprocessing
 from functools import partial
-import json
 from earthpy.spatial import normalized_diff as ndvi
-import fnmatch
 
 ##########################################################
 ##########################################################
