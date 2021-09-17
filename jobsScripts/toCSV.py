@@ -3,6 +3,7 @@ from osgeo.gdalconst import GA_ReadOnly
 import argparse
 import glob
 import os
+import sys
 from osgeo import gdal
 import numpy as np
 from csv import writer
@@ -392,7 +393,7 @@ def main():
             print('\n###WARNING###\npixel_values directory already exists, running init again will overwrite previous ingestions.\nIf you are only adding single images, use add_images function')
             answer = input('\nwould you still like to continue with init and overwrite previous verstions(y/n)\n')
             if answer.upper() == "N":
-                exit(1)
+                sys.exit(1)
 
         #if input variables are all valid, run init function
         init(image_stack_dir, output_csv_dir, args.num_rows, args.num_cores, args.image_resolution)
@@ -405,12 +406,12 @@ def main():
         #check to make sure pixel_values directory exists
         if not os.path.isdir(output_csv_dir):
             print('pixel_value directory not found, must run init function on new image stack directory before running add_images')
-            exit(1)
+            sys.exit(1)
 
         # check that image_metadata.json file exists
         if not os.path.isfile(output_csv_dir + "/image_metadata.json"):
             print("missing image_metadata.json file in pixel_values")
-            exit(1)
+            sys.exit(1)
 
         json_dict = open(glob.glob(os.path.join(output_csv_dir, '*.json'))[0])
         image_metadata = json.load(json_dict)
@@ -418,13 +419,13 @@ def main():
         #check that image_file_names.csv exists
         if not os.path.isfile(output_csv_dir + "/image_file_names.csv"):
             print("missing image_file_names.csv ")
-            exit(1)
+            sys.exit(1)
 
         #check that there are correct amount of csvs to write to in directory
         list_of_rows_to_csv = rows_to_csv_calc(image_metadata['image_shape'], image_metadata["num_rows_per_csv"])
         if len(list_of_rows_to_csv)*5 != len(glob.glob(os.path.join(output_csv_dir, '*m.csv'))):
             print('not enought csv files detected for writing, rerun init function')
-            exit(1)
+            sys.exit(1)
 
         #run add_images function
         print("all necessary files and directories exist\n")
