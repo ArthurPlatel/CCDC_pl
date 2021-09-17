@@ -367,7 +367,7 @@ def main():
             raise argparse.ArgumentTypeError('Input Parameters --num_rows, --num_cores and --image_resolution, must be pssitive non-zero integers')
 
         if os.path.isdir(output_csv_dir) and not args.overwrite:
-            print('--pixel_values directory already exists, running init again will overwrite previous ingestions. Please run with --overwrite to continue.')
+            print('--pixel_values directory already exists, running init again will overwrite previous ingestions. Run with --overwrite to continue.')
             sys.exit(1)
 
         #if input variables are all valid, run init function
