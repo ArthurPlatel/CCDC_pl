@@ -363,76 +363,72 @@ def main():
     ##### pass filter with no errors, run functions #####
     #####################################################
     #####################################################
-    #check that the user supplied image directory path exists, 
-    # else print error message
-
-    if os.path.isdir(args.path):
-
-        #if directory exists, set variables
-        image_stack_dir = args.path
-        output_csv_dir = str(image_stack_dir) + '/pixel_values'
-
-        #check that only one function being run at a time
-        if args.init and args.add_images:
-            print("Cannot Run -init and -add_images Together, Must Run One or The Other")
-
-        #verify that one function has been selected
-        elif not args.init and not args.add_images:
-            print('No Action Selected, must select one function to run (-init or -add_images')
-       
-        ##############################
-        #if init function was selected
-        elif args.init:
-            if os.path.isdir(output_csv_dir):
-                print('\n###WARNING###\npixel_values directory already exists, running init again will overwrite previous ingestions.\nIf you are only adding single images, use add_images function')
-                answer = input('\nwould you still like to continue with init and overwrite previous verstions(y/n)\n')
-                if answer.upper() == "N":
-                    exit(1)
-
-            #check num_rows rows, num_cores and image_resoluton are positive numbers
-            if args.num_rows > 0 and args.num_cores > 0 and args.image_resolution > 0:
-
-                #if input variables are all valid, run init function
-                init(image_stack_dir, output_csv_dir, args.num_rows, args.num_cores, args.image_resolution)
-            
-            # if variables are not valid, print error message
-            else:
-                print('--Input Parameters, num_rows, num_cores and image_resolution, Must Be Positive Non-Zero Integers')
-        
-        #####################################
-        # if add_images function was selected, print message
-        elif args.add_images:
-            print('\nchecking that necessary files and directories exist\n')
-            
-            #check to make sure pixel_values directory exists
-            if os.path.isdir(output_csv_dir):
-
-                # check that image_metadata.json file exists
-                if os.path.isfile(output_csv_dir + "/image_metadata.json"):
-                        json_dict = open(glob.glob(os.path.join(output_csv_dir, '*.json'))[0])
-                        image_metadata = json.load(json_dict)
-
-                        #check that image_file_names.csv exists
-                        if os.path.isfile(output_csv_dir + "/image_file_names.csv"):
-
-                            #check that there are correct amount of csvs to write to in directory
-                            list_of_rows_to_csv = rows_to_csv_calc(image_metadata['image_shape'], image_metadata["num_rows_per_csv"])
-                            if len(list_of_rows_to_csv)*5 == len(glob.glob(os.path.join(output_csv_dir, '*m.csv'))):
-                                print("all necessary files and directories exist\n")
-
-                                #run add_images function
-                                add_images(image_stack_dir, output_csv_dir, args.num_cores)
-                            
-                            else:
-                                print('not enought csv files detected for writing, rerun init function')
-                        else:
-                            print("missing image_file_names.csv ")
-                else:
-                    print("missing image_metadata.json file in pixel_values")
-            else:
-                print('pixel_value directory not found, must run init function on new image stack directory before running add_images')
-    else:
+    
+    #check that the user supplied image directory path exists, else print error message
+    if not os.path.isdir(args.path):
         raise argparse.ArgumentTypeError(f"readable_dir:{args.path} is not a valid path")
+
+    #if directory exists, set variables
+    image_stack_dir = args.path
+    output_csv_dir = str(image_stack_dir) + '/pixel_values'
+
+    #check that only one function being run at a time
+    if args.init and args.add_images:
+        raise argparse.ArgumentTypeError("Cannot run -init and -add_images together, must run one or the other")
+
+    #verify that one function has been selected
+    if not args.init and not args.add_images:
+        raise argparse.ArgumentTypeError('No Action Selected, must select one function to run (-init or -add_images')
+    
+    ##############################
+    #if init function was selected
+    if args.init:
+
+        #check num_rows rows, num_cores and image_resoluton are positive numbers
+        if not (args.num_rows > 0 and args.num_cores > 0 and args.image_resolution > 0):
+            raise argparse.ArgumentTypeError('Input Parameters --num_rows, --num_cores and --image_resolution, must be pssitive non-zero integers')
+
+        if os.path.isdir(output_csv_dir):
+            print('\n###WARNING###\npixel_values directory already exists, running init again will overwrite previous ingestions.\nIf you are only adding single images, use add_images function')
+            answer = input('\nwould you still like to continue with init and overwrite previous verstions(y/n)\n')
+            if answer.upper() == "N":
+                exit(1)
+
+        #if input variables are all valid, run init function
+        init(image_stack_dir, output_csv_dir, args.num_rows, args.num_cores, args.image_resolution)
+    
+    #####################################
+    # if add_images function was selected, print message
+    if args.add_images:
+        print('\nchecking that necessary files and directories exist\n')
+        
+        #check to make sure pixel_values directory exists
+        if not os.path.isdir(output_csv_dir):
+            print('pixel_value directory not found, must run init function on new image stack directory before running add_images')
+            exit(1)
+
+        # check that image_metadata.json file exists
+        if not os.path.isfile(output_csv_dir + "/image_metadata.json"):
+            print("missing image_metadata.json file in pixel_values")
+            exit(1)
+
+        json_dict = open(glob.glob(os.path.join(output_csv_dir, '*.json'))[0])
+        image_metadata = json.load(json_dict)
+
+        #check that image_file_names.csv exists
+        if not os.path.isfile(output_csv_dir + "/image_file_names.csv"):
+            print("missing image_file_names.csv ")
+            exit(1)
+
+        #check that there are correct amount of csvs to write to in directory
+        list_of_rows_to_csv = rows_to_csv_calc(image_metadata['image_shape'], image_metadata["num_rows_per_csv"])
+        if len(list_of_rows_to_csv)*5 != len(glob.glob(os.path.join(output_csv_dir, '*m.csv'))):
+            print('not enought csv files detected for writing, rerun init function')
+            exit(1)
+
+        #run add_images function
+        print("all necessary files and directories exist\n")
+        add_images(image_stack_dir, output_csv_dir, args.num_cores)
 
 
 if __name__ == '__main__':
