@@ -329,11 +329,12 @@ def main():
     # ## Set arg parse commands
     parser = argparse.ArgumentParser(description="CCDC")
     parser.add_argument('path', type = str)
-    parser.add_argument('-init', action = 'store_true')
-    parser.add_argument('-add_images', action = 'store_true')
+    parser.add_argument('--init', action = 'store_true')
+    parser.add_argument('--add_images', action = 'store_true')
     parser.add_argument("--num_rows", type = int, help="number of pixel rows to save per CSV file", default=10)
     parser.add_argument("--image_resolution", type=int, help="image resolution to resample image stack", default=30)
     parser.add_argument("--num_cores", type=int, help="number of cores to use in multiprocessing", default=4)
+    parser.add_argument('--overwrite', action = 'store_true')
     args = parser.parse_args()
 
     ##### argparse error filters and if user inputs #####
@@ -365,11 +366,9 @@ def main():
         if not (args.num_rows > 0 and args.num_cores > 0 and args.image_resolution > 0):
             raise argparse.ArgumentTypeError('Input Parameters --num_rows, --num_cores and --image_resolution, must be pssitive non-zero integers')
 
-        if os.path.isdir(output_csv_dir):
-            print('\n###WARNING###\npixel_values directory already exists, running init again will overwrite previous ingestions.\nIf you are only adding single images, use add_images function')
-            answer = input('\nwould you still like to continue with init and overwrite previous verstions(y/n)\n')
-            if answer.upper() == "N":
-                sys.exit(1)
+        if os.path.isdir(output_csv_dir) and not args.overwrite:
+            print('--pixel_values directory already exists, running init again will overwrite previous ingestions. Please run with --overwrite to continue.')
+            sys.exit(1)
 
         #if input variables are all valid, run init function
         init(image_stack_dir, output_csv_dir, args.num_rows, args.num_cores, args.image_resolution)
