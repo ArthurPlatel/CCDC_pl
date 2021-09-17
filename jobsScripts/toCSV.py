@@ -5,8 +5,6 @@ import glob
 import os
 from osgeo import gdal
 import numpy as np
-import time
-from datetime import date
 from csv import writer
 import csv
 import multiprocessing
@@ -14,6 +12,12 @@ from functools import partial
 import json
 from earthpy.spatial import normalized_diff as ndvi
 import fnmatch
+
+##########################################################
+##########################################################
+##################### Functions ##########################
+##########################################################
+##########################################################
 
 
 ##########################################################
@@ -29,7 +33,8 @@ def resample_image_to_tmp(image_resolution, tif_file_name):
         os.remove(new_temp_file_name)
 
     #resample images
-    print('resampling {}'.format(os.path.basename(new_temp_file_name)))
+    print(f'resampling {os.path.basename(tif_file_name)} to {image_resolution}m')
+    print('\n')
     gdal.Warp(
             new_temp_file_name,
             tif_file_name, xRes=image_resolution,
@@ -37,22 +42,6 @@ def resample_image_to_tmp(image_resolution, tif_file_name):
             resampleAlg=gdal.GRA_Average
             )
 
-
-def write_mapped_image_names_to_csv(output_csv_dir,sorted_image_stack_files):
-    ######################################################
-    # write image file name/date to csv file as row for referencing in later functions
-    
-    with open(
-        output_csv_dir 
-        + '/image_file_names' 
-        + '.csv', 'a+') as images_mapped_csv:
-
-        # create csv writer
-        writer_object = writer(images_mapped_csv)
-
-        for sorted_tif_image_name in sorted_image_stack_files:
-            # append each image file name as new csv row
-            writer_object.writerow([os.path.basename(sorted_tif_image_name)])
 
 ###############################################################
 # resamples an entire image stack and saves result in tmp folder
@@ -84,6 +73,23 @@ def resample_image_stack_to_tmp(image_resolution,sorted_image_stack_files):
     else:
         return sorted_image_stack_files
 
+
+##########################################################
+# generate and return imagestack metadata
+
+def get_image_stack_metadata(resampled_image_file_names ):
+
+    # resample image to requested resoultion
+    first_image_ds = gdal.Open(resampled_image_file_names[0])
+    
+    # output variables
+    image_shape = np.shape(first_image_ds.ReadAsArray())
+    proj=first_image_ds.GetProjection()
+    geo=first_image_ds.GetGeoTransform()
+    
+    return image_shape,proj,geo
+
+
 #########################################################
 # write image metadata to json for use by later functions
 
@@ -104,22 +110,7 @@ def write_metadata_to_json(image_shape,geo,proj,image_resolution, num_rows_per_c
     image_metadata_file .close()
 
 
-##########################################################
-# generate and return imagestack metadata
-
-def get_image_stack_metadata(resampled_image_file_names ):
-
-    # resample image to requested resoultion
-    first_image_ds = gdal.Open(resampled_image_file_names[0])
-    
-    # output variables
-    image_shape = np.shape(first_image_ds.ReadAsArray())
-    proj=first_image_ds.GetProjection()
-    geo=first_image_ds.GetGeoTransform()
-    
-    return image_shape,proj,geo
-
-###########################################################
+###############################################################
 # determine number of csv files to create from num_rows_per_csv
 
 def rows_to_csv_calc(image_shape, num_rows_per_csv):
@@ -135,7 +126,8 @@ def rows_to_csv_calc(image_shape, num_rows_per_csv):
         ]
 
 ####################################################################
-## main function to loop through resampled images and append csv
+## main function to loop through resampled images and append values to csv
+####################################################################
 
 def write_pixel_timeseries_data_to_csv_by_row(resampled_image_file_names,  output_csv_dir, image_resolution, zfill_len, pixel_rows_to_write):
         
@@ -143,16 +135,8 @@ def write_pixel_timeseries_data_to_csv_by_row(resampled_image_file_names,  outpu
         start_row, end_row = pixel_rows_to_write
         num=0
 
-       
         # loop through each reasampled image tif to extract pixel values and append a new csv for each image
         for resampled_image_file in resampled_image_file_names:
-            print(
-                'writing rows {} to {} for {} to CSV'.format(
-                pixel_rows_to_write[0], 
-                pixel_rows_to_write[1], 
-                os.path.basename(resampled_image_file))
-                )
-            num+=1
             
 
             # open each file tif into dataset
@@ -205,24 +189,43 @@ def write_pixel_timeseries_data_to_csv_by_row(resampled_image_file_names,  outpu
                              * 1000).flatten()
                              )
                 
+
+############################################################################
+# for each image tif mapped to csv, record file name to csv for use by later functions
+
+def write_mapped_image_names_to_csv(output_csv_dir,sorted_image_stack_files):
+    
+    # create/open csv file to append
+    with open(
+        output_csv_dir 
+        + '/image_file_names' 
+        + '.csv', 'a+') as images_mapped_csv:
+
+        # create csv writer
+        writer_object = writer(images_mapped_csv)
+
+        for sorted_tif_image_name in sorted_image_stack_files:
             
+            # append each image file name as new csv row
+            writer_object.writerow([os.path.basename(sorted_tif_image_name)])
+
+   
 ##########################################################################################
 ################################### Init Function ########################################
 ########################################################################################## 
-# Takes input image_stack and writes data to csv files which can later be read and values
-# used in CCD
+# Takes input image_stack and writes data to csv files which can later 
+# be read and values used in CCD algorithim
 
 def init(image_stack_dir, output_csv_dir, num_rows_per_csv, cores, image_resolution):
     
-    
     # sort image files from directory
     sorted_image_stack_files = sorted(glob.glob(os.path.join(image_stack_dir, '*.tif')))
+    print(f'\ningesting {len(sorted_image_stack_files)} files\n')
 
     # resample images to desired resolution and save temp files in new temp directory
     resampled_image_file_names = resample_image_stack_to_tmp(image_resolution, sorted_image_stack_files)
-    
+
     # create output CSV folder
-    
     if not os.path.isdir(output_csv_dir):
         os.mkdir(output_csv_dir)
 
@@ -251,6 +254,7 @@ def init(image_stack_dir, output_csv_dir, num_rows_per_csv, cores, image_resolut
     
     # use multiprocessing to write rows to csv
     p = multiprocessing.Pool(cores)
+    print('\nwriting rows to csv\n')
     p.map(
         partial(
         write_pixel_timeseries_data_to_csv_by_row, 
@@ -262,6 +266,8 @@ def init(image_stack_dir, output_csv_dir, num_rows_per_csv, cores, image_resolut
         )
 
     write_mapped_image_names_to_csv(output_csv_dir,sorted_image_stack_files)
+
+    print("init complete")
 
  
 ##########################################################################################
@@ -295,12 +301,14 @@ def add_images(image_stack_dir, output_csv_dir, cores):
     
     # check to see if images in image directory have already been mapped
     # if not, append new file name to list of files needing to be mapped
+    print("checking for new images in directory\n")
     for image_name in old_and_new_image_file_names:
         if list_of_image_names_already_mapped.count(image_name) == 0:
            list_of_image_names_not_mapped.append(os.path.join(image_stack_dir, image_name))
    
     # if there are new files, map them to CSV
     if len(list_of_image_names_not_mapped) > 0:
+        print(f"{len(list_of_image_names_not_mapped)} new images detected \nadding new images to CSV\n")
        
        # collect image metadata and original init settings needed to write 
        # new images to csv with same parametes
@@ -315,6 +323,7 @@ def add_images(image_stack_dir, output_csv_dir, cores):
         
         # use multiprocessing to append pixel data rows to previously created csv files for each band
         p = multiprocessing.Pool(cores)
+        print('\nwriting rows to csv\n')
         p.map(
             partial(
             write_pixel_timeseries_data_to_csv_by_row, 
@@ -330,36 +339,101 @@ def add_images(image_stack_dir, output_csv_dir, cores):
 
         # append recently mapped file names to csv of all mapped file names
         write_mapped_image_names_to_csv(output_csv_dir,newly_mapped_images_names )
+
+        print(" new images successfully added")
     
     #if no new images to map in directory, print message
     else:
-        print('No New Images To Add')
+        print('No new images to add\n')
        
 
 def main():
     # ############ Command Line Variables ################
-    # ## Set Parser flags
-    # parser = argparse.ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
-    # parser.add_argument("-f",action="store", metavar="action", type=str, help="choose function ( i= init, a = addImages)")
-    # parser.add_argument("-d",action="store", metavar="directory", type=str, help="Directory of image stack")
-    # parser.add_argument("--r", action="store", metavar="value", type=int, help="Output resolution to resample image stack", default=30)
-    # parser.add_argument("--p", action="store", metavar="value", type=int, help="Number of pixels to process per CSV file", default=400*400)
-    # parser.add_argument("--c", action="store", metavar="value", type=int, help="Number of cores to use in multiprocessing", default=4)
-    # parser.add_argument("-h", "--help", action="help", help="Display this message")
-    # args = parser.parse_args()
-    # ## Get Variables
-    # parent_dir=args.d
-    # sample_size=args.r
-    # pixel_count=args.p
-    # cores=args.c
-    image_stack_dir='/Users/arthur.platel/Desktop/PF-SR'
-    cores = 4
-    
-    output_csv_dir = str(image_stack_dir) + '/pixel_values'
-    
-    #init(image_stack_dir,output_csv_dir, 100,4,30)
+    # ## Set arg parse commands
+    parser = argparse.ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
+    parser.add_argument('path', type = str)
+    parser.add_argument('-init', action = 'store_true')
+    parser.add_argument('-add_images', action = 'store_true')
+    parser.add_argument("--num_rows", type = int, help="number of pixel rows to save per CSV file", default=10)
+    parser.add_argument("--image_resolution", type=int, help="image resolution to resample image stack", default=30)
+    parser.add_argument("--num_cores", type=int, help="number of cores to use in multiprocessing", default=4)
+    args = parser.parse_args()
 
-    add_images(image_stack_dir, output_csv_dir, cores)
+    ##### argparse error filters and if user inputs #####
+    ##### pass filter with no errors, run functions #####
+    #####################################################
+    #####################################################
+    #check that the user supplied image directory path exists, 
+    # else print error message
+
+    if os.path.isdir(args.path):
+
+        #if directory exists, set variables
+        image_stack_dir = args.path
+        output_csv_dir = str(image_stack_dir) + '/pixel_values'
+
+        #check that only one function being run at a time
+        if args.init and args.add_images:
+            print("Cannot Run -init and -add_images Together, Must Run One or The Other")
+
+        #verify that one function has been selected
+        elif not args.init and not args.add_images:
+            print('No Action Selected, must select one function to run (-init or -add_images')
+       
+        ##############################
+        #if init function was selected
+        elif args.init:
+            if os.path.isdir(output_csv_dir):
+                print('\n###WARNING###\npixel_values directory already exists, running init again will overwrite previous ingestions.\nIf you are only adding single images, use add_images function')
+                answer = input('\nwould you still like to continue with init and overwrite previous verstions(y/n)\n')
+                if answer.upper() == "N":
+                    exit(1)
+
+            #check num_rows rows, num_cores and image_resoluton are positive numbers
+            if args.num_rows > 0 and args.num_cores > 0 and args.image_resolution > 0:
+
+                #if input variables are all valid, run init function
+                init(image_stack_dir, output_csv_dir, args.num_rows, args.num_cores, args.image_resolution)
+            
+            # if variables are not valid, print error message
+            else:
+                print('--Input Parameters, num_rows, num_cores and image_resolution, Must Be Positive Non-Zero Integers')
+        
+        #####################################
+        # if add_images function was selected, print message
+        elif args.add_images:
+            print('\nchecking that necessary files and directories exist\n')
+            
+            #check to make sure pixel_values directory exists
+            if os.path.isdir(output_csv_dir):
+
+                # check that image_metadata.json file exists
+                if os.path.isfile(output_csv_dir + "/image_metadata.json"):
+                        json_dict = open(glob.glob(os.path.join(output_csv_dir, '*.json'))[0])
+                        image_metadata = json.load(json_dict)
+
+                        #check that image_file_names.csv exists
+                        if os.path.isfile(output_csv_dir + "/image_file_names.csv"):
+
+                            #check that there are correct amount of csvs to write to in directory
+                            list_of_rows_to_csv = rows_to_csv_calc(image_metadata['image_shape'], image_metadata["num_rows_per_csv"])
+                            if len(list_of_rows_to_csv)*5 == len(glob.glob(os.path.join(output_csv_dir, '*m.csv'))):
+                                print("all necessary files and directories exist\n")
+
+                                #run add_images function
+                                add_images(image_stack_dir, output_csv_dir, args.num_cores)
+                            
+                            else:
+                                print('not enought csv files detected for writing, rerun init function')
+                        else:
+                            print("missing image_file_names.csv ")
+                else:
+                    print("missing image_metadata.json file in pixel_values")
+            else:
+                print('pixel_value directory not found, must run init function on new image stack directory before running add_images')
+    else:
+        raise argparse.ArgumentTypeError(f"readable_dir:{args.path} is not a valid path")
+
 
 if __name__ == '__main__':
     main()
