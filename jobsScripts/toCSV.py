@@ -349,7 +349,7 @@ def add_images(image_stack_dir, output_csv_dir, cores):
 def main():
     # ############ Command Line Variables ################
     # ## Set arg parse commands
-    parser = argparse.ArgumentParser(description="CCDC", allow_abbrev=False, add_help=False)
+    parser = argparse.ArgumentParser(description="CCDC")
     parser.add_argument('path', type = str)
     parser.add_argument('-init', action = 'store_true')
     parser.add_argument('-add_images', action = 'store_true')
