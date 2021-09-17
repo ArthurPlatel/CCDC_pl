@@ -25,15 +25,15 @@ from earthpy.spatial import normalized_diff as ndvi
 def resample_image_to_tmp(image_resolution, tif_file_name):
    
     #create tmp file name
-    new_temp_file_name ='/tmp/' + str(image_resolution) + 'm_' + str(os.path.basename(tif_file_name))
+    tif_file_basename = os.path.basename(tif_file_name)
+    new_temp_file_name = f'/tmp/{image_resolution}m_{tif_file_basename}'
     
     #check to see resampled images already exist and remove if so
     if os.path.isfile(new_temp_file_name):
         os.remove(new_temp_file_name)
 
     #resample images
-    print(f'resampling {os.path.basename(tif_file_name)} to {image_resolution}m')
-    print('\n')
+    print(f'resampling {tif_file_basename} to {image_resolution}m\n')
     gdal.Warp(
             new_temp_file_name,
             tif_file_name, xRes=image_resolution,
@@ -45,54 +45,52 @@ def resample_image_to_tmp(image_resolution, tif_file_name):
 ###############################################################
 # resamples an entire image stack and saves result in tmp folder
 
-def resample_image_stack_to_tmp(image_resolution,sorted_image_stack_files):
+def resample_image_stack_to_tmp(image_resolution, sorted_image_stack_files):
     
     # initiate multiprocessing with 4 cores
-    p=multiprocessing.Pool(4)
-    
-    # if desired resolution is not PS native 3m, 
-    # resamaple images and create list of filenames/path, 
-    if image_resolution != 3:
-       
-        #create list of tmp resampled image names
-        list_of_resampled_image_names =  [
-        '/tmp/' + str(image_resolution) 
-        + 'm_' + str(os.path.basename(tif_file_name)) 
-        for tif_file_name in sorted_image_stack_files
-        ]
-
-        #resample images to tmp files using multiprocessing
-        p.map(partial(resample_image_to_tmp, image_resolution), sorted_image_stack_files)
-        
-        #return resampled image file names + path  
-        return list_of_resampled_image_names
+    p = multiprocessing.Pool(4)
     
     # if request images_resolution is 3m 
     # return original sorted image stack file names/path
-    else:
+    if image_resolution == 3:
         return sorted_image_stack_files
+
+    # if desired resolution is not PS native 3m, 
+    # resamaple images and create list of filenames/path, 
+       
+    #create list of tmp resampled image names
+    list_of_resampled_image_names =  [
+        f'/tmp/{image_resolution}m_{os.path.basename(fname)}' 
+        for fname in sorted_image_stack_files
+    ]
+
+    #resample images to tmp files using multiprocessing
+    p.map(partial(resample_image_to_tmp, image_resolution), sorted_image_stack_files)
+    
+    #return resampled image file names + path  
+    return list_of_resampled_image_names
 
 
 ##########################################################
 # generate and return imagestack metadata
 
-def get_image_stack_metadata(resampled_image_file_names ):
+def get_image_stack_metadata(resampled_image_file_names):
 
     # resample image to requested resoultion
     first_image_ds = gdal.Open(resampled_image_file_names[0])
     
     # output variables
     image_shape = np.shape(first_image_ds.ReadAsArray())
-    proj=first_image_ds.GetProjection()
-    geo=first_image_ds.GetGeoTransform()
+    proj = first_image_ds.GetProjection()
+    geo = first_image_ds.GetGeoTransform()
     
-    return image_shape,proj,geo
+    return image_shape, proj, geo
 
 
 #########################################################
 # write image metadata to json for use by later functions
 
-def write_metadata_to_json(image_shape,geo,proj,image_resolution, num_rows_per_csv,output_csv_dir):
+def write_metadata_to_json(image_shape,geo,proj, image_resolution, num_rows_per_csv ,output_csv_dir):
        
     # create dict of metadata
     image_metadata_dict = {
@@ -104,9 +102,8 @@ def write_metadata_to_json(image_shape,geo,proj,image_resolution, num_rows_per_c
             }
     
     # write dict metadata to json file
-    image_metadata_file = open(output_csv_dir + "/image_metadata.json", "w")
-    image_metadata_file.write(json.dumps(image_metadata_dict))
-    image_metadata_file .close()
+    with open(f"{output_csv_dir}/image_metadata.json", "w") as image_metadata_file:
+        image_metadata_file.write(json.dumps(image_metadata_dict))
 
 
 ###############################################################
@@ -119,8 +116,8 @@ def rows_to_csv_calc(image_shape, num_rows_per_csv):
     
     # calculate row #s
     return [
-        (i,i + num_rows_per_csv)
-        if i + num_rows_per_csv <= cols else (i,cols) 
+        (i, i + num_rows_per_csv)
+        if i + num_rows_per_csv <= cols else (i, cols) 
         for i in range(0, cols, num_rows_per_csv)
         ]
 
@@ -132,12 +129,10 @@ def write_pixel_timeseries_data_to_csv_by_row(resampled_image_file_names,  outpu
         
         # variables
         start_row, end_row = pixel_rows_to_write
-        num=0
 
         # loop through each reasampled image tif to extract pixel values and append a new csv for each image
         for resampled_image_file in resampled_image_file_names:
             
-
             # open each file tif into dataset
             tif_dataset = gdal.Open(resampled_image_file)
             
@@ -146,19 +141,12 @@ def write_pixel_timeseries_data_to_csv_by_row(resampled_image_file_names,  outpu
             # flattens each band array into single list and appends list as new row to csv
 
             # create/open csv file for 4 PS bands
-            for k in range(1,5):
-                with open(
-                    output_csv_dir + '/b' + str(k) 
-                     + '_rows_' 
-                    + str(start_row).zfill(zfill_len) 
-                    + '_to_' + str(end_row).zfill(zfill_len) 
-                    +  '_' + str(image_resolution)
-                    + 'm.csv', 'a+'
-                    ) as out_4band_csvs:
+            for k in range(1, 5):
+                fname = f'{output_csv_dir}/b{k}_rows_{start_row:0{zfill_len}d}_to_{end_row:0{zfill_len}d}_{image_resolution}m.csv'
+                with open(fname, 'a+') as out_4band_csvs:
 
                     # create csv writer
                     writer_object = writer(out_4band_csvs)
-
 
                     # append band pixel-values, clipped to rows and flattened into one list, as new csv row
                     writer_object.writerow(np.array(tif_dataset.GetRasterBand(k).ReadAsArray()[start_row:end_row].flatten()))
@@ -167,38 +155,30 @@ def write_pixel_timeseries_data_to_csv_by_row(resampled_image_file_names,  outpu
             # calculate and append b5(ndvi) csv values by row
             
             # create/open csv ndvi file
-            with open(
-                    output_csv_dir + '/b5'
-                     + '_rows_' 
-                    + str(start_row).zfill(zfill_len) 
-                    + '_to_' + str(end_row).zfill(zfill_len) 
-                    +  '_' + str(image_resolution)
-                    + 'm.csv', 'a+'
-                    ) as out_ndvi_csv:
+            fname = f'{output_csv_dir}/b5_rows_{start_row}_to_{end_row}_{image_resolution}m.csv'
+            with open(fname, 'a+') as out_ndvi_csv:
 
-                    # create csv writer
-                    writer_object = writer(out_ndvi_csv)
+                # create csv writer
+                writer_object = writer(out_ndvi_csv)
 
-                    # calculate ndvi using earthpy.spatial normalized diff
-                    # append ndvi to csv files by new row
-                    writer_object.writerow((
-                        ndvi(
-                            tif_dataset.GetRasterBand(4).ReadAsArray()[start_row:end_row], 
-                            tif_dataset.GetRasterBand(3).ReadAsArray()[start_row:end_row])
-                             * 1000).flatten()
-                             )
+                # calculate ndvi using earthpy.spatial normalized diff
+                # append ndvi to csv files by new row
+                writer_object.writerow((
+                    ndvi(
+                        tif_dataset.GetRasterBand(4).ReadAsArray()[start_row:end_row], 
+                        tif_dataset.GetRasterBand(3).ReadAsArray()[start_row:end_row]
+                        ) * 1000).flatten()
+                    )
                 
 
 ############################################################################
 # for each image tif mapped to csv, record file name to csv for use by later functions
 
-def write_mapped_image_names_to_csv(output_csv_dir,sorted_image_stack_files):
+def write_mapped_image_names_to_csv(output_csv_dir, sorted_image_stack_files):
     
     # create/open csv file to append
-    with open(
-        output_csv_dir 
-        + '/image_file_names' 
-        + '.csv', 'a+') as images_mapped_csv:
+    fname = f'{output_csv_dir}/image_file_names.csv'
+    with open(fname, 'a+') as images_mapped_csv:
 
         # create csv writer
         writer_object = writer(images_mapped_csv)
@@ -233,13 +213,13 @@ def init(image_stack_dir, output_csv_dir, num_rows_per_csv, cores, image_resolut
     for file in os.scandir(output_csv_dir):
         os.remove(file.path)
 
-
     # collect metadata
     image_shape, proj, geo = get_image_stack_metadata(resampled_image_file_names)
+    zfill_len = len(str(image_shape[2]))
     
     # write metadata to json file
     write_metadata_to_json(
-        image_shape,geo,proj, 
+        image_shape, geo, proj, 
         image_resolution, 
         num_rows_per_csv, 
         output_csv_dir
@@ -247,10 +227,8 @@ def init(image_stack_dir, output_csv_dir, num_rows_per_csv, cores, image_resolut
 
     # determine number of csv files to create using use input, num_rows_per_csv,
     #  and create tuples of row numbers for each multiprocessing job
-
     pixel_rows_to_write = rows_to_csv_calc(image_shape, num_rows_per_csv)
  
-    
     # use multiprocessing to write rows to csv
     p = multiprocessing.Pool(cores)
     print('\nwriting rows to csv\n')
@@ -260,13 +238,13 @@ def init(image_stack_dir, output_csv_dir, num_rows_per_csv, cores, image_resolut
         resampled_image_file_names, 
         output_csv_dir, 
         image_resolution, 
-        len(str(image_shape[2]))), 
+        zfill_len), 
         pixel_rows_to_write
         )
 
     write_mapped_image_names_to_csv(output_csv_dir,sorted_image_stack_files)
 
-    print("init complete")
+    print("\ninit complete\n")
 
  
 ##########################################################################################
@@ -369,7 +347,7 @@ def main():
 
     #if directory exists, set variables
     image_stack_dir = args.path
-    output_csv_dir = str(image_stack_dir) + '/pixel_values'
+    output_csv_dir = f'{image_stack_dir}/pixel_values'
 
     #check that only one function being run at a time
     if args.init and args.add_images:
@@ -407,7 +385,7 @@ def main():
             sys.exit(1)
 
         # check that image_metadata.json file exists
-        if not os.path.isfile(output_csv_dir + "/image_metadata.json"):
+        if not os.path.isfile(f"{output_csv_dir}/image_metadata.json"):
             print("missing image_metadata.json file in pixel_values")
             sys.exit(1)
 
@@ -415,7 +393,7 @@ def main():
         image_metadata = json.load(json_dict)
 
         #check that image_file_names.csv exists
-        if not os.path.isfile(output_csv_dir + "/image_file_names.csv"):
+        if not os.path.isfile(f"{output_csv_dir}/image_file_names.csv"):
             print("missing image_file_names.csv ")
             sys.exit(1)
 
