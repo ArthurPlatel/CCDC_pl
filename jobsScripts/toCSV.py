@@ -11,7 +11,6 @@ from osgeo import gdal
 import multiprocessing
 from functools import partial
 from earthpy.spatial import normalized_diff as ndvi
-import re 
 
 ##########################################################
 ##########################################################
@@ -396,7 +395,7 @@ def main():
             print("missing image_metadata.json file in pixel_values")
             sys.exit(1)
 
-        json_dict = open(glob.glob(os.path.join(output_csv_dir, '*.json'))[0])
+        json_dict = open(glob.glob(os.path.join(output_csv_dir, '*image_metadata.json'))[0])
         image_metadata = json.load(json_dict)
 
         #check that image_file_names.csv exists

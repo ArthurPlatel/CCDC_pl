@@ -5,8 +5,6 @@
 
 defaults = {
 # Most important CCDC Variables
-    'pool_size':4, #number of multiprocessing pools to use in CCDC analysis
-    'num_rows': 5, #number of pixel rows to process at a time
     'MEOW_SIZE': 12, #minimum expected observation window needed to produce a fit.
     'PEEK_SIZE': 8, #number of repetive observations that must surpass change threshold to detect change
     'DAY_DELTA': 365, #number of days required for a years worth of data, defined to be 365
@@ -29,7 +27,7 @@ defaults = {
     'QA_IDX': 6,
 
     # Spectral bands that are utilized for detecting change
-    'DETECTION_BANDS': [4],
+    'DETECTION_BANDS': [3,4,5],
 
     # Spectral bands that are utilized for Tmask filtering
     'TMASK_BANDS': [1,2,3,4],
@@ -40,11 +38,6 @@ defaults = {
     ##############################
    # Classification Settings
    ##############################
-     # shp file containing training data for classification
-    'trainingData':'/Users/arthur.platel/Desktop/Fusion_Images/deforestationV2/PF-SR/CCD_Output3m_working/Training/AllDeforestation.shp',
-    #csv file to create training raster
-    'CCD_output_CSVfile':'/Users/arthur.platel/Desktop/Fusion_Images/hospital/PF-SR/CCD_Output10m_resampled/CCD_resultsDict.csv',
-    'className':'DeforestationClass', # output classification raster name
     'n_estimators':1000,
     'oob_score':True,
 
