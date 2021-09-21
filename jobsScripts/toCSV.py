@@ -11,6 +11,7 @@ from osgeo import gdal
 import multiprocessing
 from functools import partial
 from earthpy.spatial import normalized_diff as ndvi
+import re 
 
 ##########################################################
 ##########################################################
@@ -112,13 +113,13 @@ def write_metadata_to_json(image_shape,geo,proj, image_resolution, num_rows_per_
 def rows_to_csv_calc(image_shape, num_rows_per_csv):
 
     # variables
-    _, _, cols = image_shape
+    _, rows, _ = image_shape
     
     # calculate row #s
     return [
         (i, i + num_rows_per_csv)
-        if i + num_rows_per_csv <= cols else (i, cols) 
-        for i in range(0, cols, num_rows_per_csv)
+        if i + num_rows_per_csv <= rows else (i, rows) 
+        for i in range(0, rows, num_rows_per_csv)
         ]
 
 ####################################################################
@@ -127,8 +128,15 @@ def rows_to_csv_calc(image_shape, num_rows_per_csv):
 
 def write_pixel_timeseries_data_to_csv_by_row(resampled_image_file_names,  output_csv_dir, image_resolution, zfill_len, pixel_rows_to_write):
         
+
         # variables
         start_row, end_row = pixel_rows_to_write
+
+        #create new directories for each row grouping
+        output_csv_dir = output_csv_dir +'/rows_' + str(start_row) + '_to_' + str(end_row)
+        
+        if not os.path.isdir(output_csv_dir):
+            os.mkdir(output_csv_dir)
 
         # loop through each reasampled image tif to extract pixel values and append a new csv for each image
         for resampled_image_file in resampled_image_file_names:
@@ -398,9 +406,15 @@ def main():
 
         #check that there are correct amount of csvs to write to in directory
         list_of_rows_to_csv = rows_to_csv_calc(image_metadata['image_shape'], image_metadata["num_rows_per_csv"])
-        if len(list_of_rows_to_csv)*5 != len(glob.glob(os.path.join(output_csv_dir, '*m.csv'))):
-            print('not enought csv files detected for writing, rerun init function')
+    
+        if len(list_of_rows_to_csv) != len(glob.glob(os.path.join(output_csv_dir, 'rows*'))):
+            print('not enought row folders detected in pixel_values, rerun init function')
             sys.exit(1)
+
+        for row_folder in glob.glob(os.path.join(output_csv_dir, 'rows*')):
+            if len(os.listdir(row_folder)) != 5:
+                    print('not enought csv files detected for writing, rerun init function')
+                    sys.exit(1)
 
         #run add_images function
         print("all necessary files and directories exist\n")
