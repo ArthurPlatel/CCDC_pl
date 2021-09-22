@@ -1,15 +1,16 @@
-import datetime
-import multiprocessing
-import csv
-from ccd.parameters import defaults as dfs
 import os
+import csv
+import sys
 import glob
-from ccd import detect
 import json
 import argparse
-import sys
+import datetime
+import multiprocessing
 from time import strptime
 from functools import partial
+
+from ccd import detect
+from ccd.parameters import defaults as dfs
 
 
 def main():
